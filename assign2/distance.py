@@ -1,5 +1,12 @@
 
 
+def argumentParser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(target, type=str, help="The input target string.")
+    parser.add_argument(source, type=str, help="The input source string.")
+    parser.add_argument(-n, type=int, default=50, help="The maximum number of alignments to print.")
+    return parser.parse_args()
+
 def distance(target, source, insertcost, deletecost, replacecost):
     n = len(target) + 1
     m = len(source) + 1
@@ -93,16 +100,22 @@ def check(dist):
         print " ".join(["%2s(%s)" % el for el in row])
 
 if __name__ == '__main__':
-    from sys import argv
-    if len(argv) > 2:
-        n = len(argv[1]) + 1
-        m = len(argv[2]) + 1
-        dist = distance(argv[1], argv[2], 1, 1, 2)
-        print "levenshtein distance =", dist[n-1][m-1]
-        paths = []
-        backtrace(dist, n-1, m-1, [], paths)
-        # check(dist)
-        print "paths", paths
-        #visualize(argv[1], argv[2], ops)
+#    from sys import argv
+#    if len(argv) > 2:
+#        n = len(argv[1]) + 1
+#        m = len(argv[2]) + 1
+
+    args = argumentParser()
+    source = args.source
+    target = args.target
+    n = len(source) + 1
+    m = len(target) + 1
+    dist = distance(target, source, 1, 1, 2)
+    print "levenshtein distance =", dist[n-1][m-1]
+    paths = []
+    backtrace(dist, n-1, m-1, [], paths)
+    # check(dist)
+    print "paths", paths
+    #visualize(argv[1], argv[2], ops)
        
 
