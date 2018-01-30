@@ -1,0 +1,81 @@
+################################################################################
+# CSCI 404 - Assignment 1 - Josh Loehr & Robin Cosbey - report.txt             #
+################################################################################
+
+1.  To complete this task, we modified the distance() code we were provided to return 
+    the entire dist matrix. We then implemented backtrace() to recursively find every 
+    path through the dist matrix that received the minimum edit distance. This also 
+    required min_op() which determined the coordinates of the next position to vist
+    as well as the symbol representing the operation completed (I=insert, D=delete,
+    S=substitute, and A=align). Once every path corresponding to the minimum edit 
+    distance was found, we printed the Levenshtein distance and used visualize() 
+    to display the target and source words in the format specified.
+
+    Additional resources: argparse (implemented in order to easily input target, source, and n)
+
+    Results: See sample output below with target='gamble' source='gumbo' and n=50:
+
+
+python distance.py gamble gumbo
+
+levenshtein distance = 5
+g _ a m b _ l e 
+|     | |       
+g u _ m b o _ _ 
+
+g a _ m b _ l e 
+|     | |       
+g _ u m b o _ _ 
+
+g a m b _ l e 
+|   | |       
+g u m b o _ _ 
+
+g _ a m b l _ e 
+|     | |       
+g u _ m b _ o _ 
+
+g a _ m b l _ e 
+|     | |       
+g _ u m b _ o _ 
+
+g a m b l _ e 
+|   | |       
+g u m b _ o _ 
+
+g _ a m b l e 
+|     | |     
+g u _ m b o _ 
+
+g a _ m b l e 
+|     | |     
+g _ u m b o _ 
+
+g a m b l e 
+|   | |     
+g u m b o _ 
+
+g _ a m b l e _ 
+|     | |       
+g u _ m b _ _ o 
+
+g a _ m b l e _ 
+|     | |       
+g _ u m b _ _ o 
+
+g a m b l e _ 
+|   | |       
+g u m b _ _ o 
+
+g _ a m b l e 
+|     | |     
+g u _ m b _ o 
+
+g a _ m b l e 
+|     | |     
+g _ u m b _ o 
+
+g a m b l e 
+|   | |     
+g u m b _ o 
+
