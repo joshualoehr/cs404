@@ -1,5 +1,5 @@
 ################################################################################
-# CSCI 404 - Assignment 1 - Josh Loehr & Robin Cosbey - report.txt             #
+# CSCI 404 - Assignment 2 - Josh Loehr & Robin Cosbey - report.txt             #
 ################################################################################
 
 1.  To complete this task, we modified the distance() code we were provided to return 
