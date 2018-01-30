@@ -1,5 +1,5 @@
 ###############################################################################
-# CSCI 404 - Assignment 1 - Josh Loehr & Robin Cosbey                         #
+# CSCI 404 - Assignment 1 - Josh Loehr & Robin Cosbey - assign1.py            #
 ###############################################################################
 
 import nltk
