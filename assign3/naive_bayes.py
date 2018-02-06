@@ -24,7 +24,7 @@ def load_data(data_dir):
     return train, test
 
 def add_sentence_tokens(sentences, n):
-    sos = "<s> " * (n-1)
+    sos = "<s> " * max(n-1, 1) 
     eos = "</s>"
     return ['{}{} {}'.format(sos, s, eos) for s in sentences]
 
@@ -47,14 +47,16 @@ def smooth(tokens, ngrams, vocab_size):
 
 def create_model(tokens, n):
     if n == 1:
-        return tokens
+        vocab = tokens.vocab()
+        total_tokens = len(tokens)
+        return { (unigram,): count/total_tokens for unigram, count in vocab.items() }
     if n == 2:
         return smooth(tokens, nltk.bigrams(tokens), len(tokens.vocab()))
     if n == 3:
         return smooth(nltk.bigrams(tokens), nltk.trigrams(tokens), len(tokens.vocab()))
 
 def most_probable_tokens(model, prev, num_candidates=1, blacklist=[]):
-    blacklist.append("<UNK>")
+    blacklist += ["<UNK>", "<s>"]
     filter = lambda ngram: ngram[-1] not in blacklist
 
     candidates = [(ngram[-1], prob) for ngram, prob in model.items() if ngram[:-1] == prev and filter(ngram)]
@@ -68,15 +70,21 @@ def generate(model, n, len_range, num=10):
     sentences = ["<s>"] * num
     probabilities = [1] * num
 
-    sos_grams = most_probable_tokens(model, ("<s>",), num_candidates=num)
+    prev = () if n==1 else ("<s>",)
+    sos_grams = most_probable_tokens(model, prev, num_candidates=num, blacklist=["</s>"])
+    
     sentences = list(zip(sentences, [ngram for ngram, _ in sos_grams]))
     sentences = [list(sentence) for sentence in sentences]
     probabilities = [probabilities[i] * prob for i, (_, prob) in enumerate(sos_grams)]
 
     for i in range(num):
         while sentences[i][-1] != "</s>" and len(sentences[i]) < max_length:
-            prev = tuple(sentences[i][-(n-1):])
-            blacklist = ["</s>"] if len(sentences[i]) < min_length else []
+            prev = () if n==1 else tuple(sentences[i][-(n-1):]) 
+            blacklist = []
+            if n == 1:
+                blacklist += sentences[i]
+            if len(sentences[i]) < min_length + 2:
+                blacklist.append("</s>")
             next_token, next_prob = most_probable_tokens(model, prev, blacklist=blacklist)[0]
             sentences[i].append(next_token)
             probabilities[i] *= next_prob
@@ -109,31 +117,31 @@ if __name__ == '__main__':
     if args.unigrams:
         tokens = preprocess(train, n=1)
         print("Size of training vocab: {}".format(len(tokens.vocab())))
-        # avg_sentence_length = int(len(tokens) / tokens.vocab()['<s>'])
-        len_range = (0, 24)
+        avg_sentence_length = int(len(tokens) / tokens.vocab()['<s>'])
+        len_range = (1, avg_sentence_length)
 
         print("Generating sentences...")
-        model = create_model(train, n=1)
+        model = create_model(tokens, n=1)
         display_generated(model, 1, len_range)
 
     if args.bigrams:
         tokens = preprocess(train, n=2)
         print("Size of training vocab: {}".format(len(tokens.vocab())))
         avg_sentence_length = int(len(tokens) / tokens.vocab()['<s>'])
-        len_range = (0, avg_sentence_length)
+        len_range = (1, avg_sentence_length)
 
         print("Generating sentences...")
-        model = create_model(train, n=2)
+        model = create_model(tokens, n=2)
         display_generated(model, 2, len_range)
 
     if args.trigrams:
         tokens = preprocess(train, n=3)
         print("Size of training vocab: {}".format(len(tokens.vocab())))
         avg_sentence_length = int(len(tokens) / (tokens.vocab()['<s>'] / 2))
-        len_range = (0, avg_sentence_length)
+        len_range = (1, avg_sentence_length)
 
         print("Generating sentences...")
-        model = create_model(train, n=3)
+        model = create_model(tokens, n=3)
         display_generated(model, 3, len_range)
 
 
