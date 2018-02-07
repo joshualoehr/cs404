@@ -9,6 +9,7 @@ from collections import Counter
 from itertools import product
 import nltk
 from pathlib import Path
+import math
 
 def get_filepaths(data_path):
     train_path = data_path.joinpath('train.txt').absolute().as_posix()
@@ -93,9 +94,15 @@ def generate(model, n, len_range, num=10):
 def display_generated(model, n, len_range=(0,25)):
     generated = generate(model, n, len_range=len_range)
     for sentence, prob in generated:
-        print("{} ({})".format(sentence, prob))
+        print("{} ({})".format(sentence, math.log(prob)))
 
+def compute_perplexity(model, tokens, N):
+    flatten = lambda outer: [item for inner in outer for item in inner]
 
+    tokens = nltk.Text(tokens)
+    vocab = { tuple(flatten((token,))) for token in tokens.vocab() }
+    probabilities = [prob for ngram, prob in model.items() if ngram in vocab]
+    return math.exp((-1/N)*sum(map(math.log, probabilities)))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser("Naive Bayes Text Classifier")
@@ -111,7 +118,6 @@ if __name__ == '__main__':
     # Load and prepare train/test data
     data_path = Path(args.data)
     train, test = load_data(data_path)
-
     
     if args.unigrams:
         tokens = preprocess(train, n=1)
@@ -119,9 +125,17 @@ if __name__ == '__main__':
         avg_sentence_length = int(len(tokens) / tokens.vocab()['<s>'])
         len_range = (1, avg_sentence_length)
 
-        print("Generating sentences...")
+        print("Generating unigram sentences...")
         model = create_model(tokens, n=1)
         display_generated(model, 1, len_range)
+
+        test_tokens = preprocess(test, n=1)
+
+        # tokens = nltk.Text(test_tokens)
+        # vocab = { tuple([token]) for token in tokens.vocab() }
+        # perplexity = compute_perplexity(model, tokens, vocab, len(test_tokens))
+        perplexity = compute_perplexity(model, test_tokens, len(test_tokens))
+        print("Unigram perplexity: {}".format(perplexity))
 
     if args.bigrams:
         tokens = preprocess(train, n=2)
@@ -129,9 +143,13 @@ if __name__ == '__main__':
         avg_sentence_length = int(len(tokens) / tokens.vocab()['<s>'])
         len_range = (1, avg_sentence_length)
 
-        print("Generating sentences...")
+        print("Generating bigram sentences...")
         model = create_model(tokens, n=2)
         display_generated(model, 2, len_range)
+        
+        test_tokens = preprocess(test, n=2)
+        perplexity = compute_perplexity(model, nltk.bigrams(test_tokens), len(test_tokens))
+        print("Bigram perplexity: {}".format(perplexity))
 
     if args.trigrams:
         tokens = preprocess(train, n=3)
@@ -139,11 +157,15 @@ if __name__ == '__main__':
         avg_sentence_length = int(len(tokens) / (tokens.vocab()['<s>'] / 2))
         len_range = (1, avg_sentence_length)
 
-        print("Generating sentences...")
+        print("Generating trigram sentences...")
         model = create_model(tokens, n=3)
         display_generated(model, 3, len_range)
 
+        test_tokens = preprocess(test, n=3)
+        perplexity = compute_perplexity(model, nltk.trigrams(test_tokens), len(test_tokens))
+        print("Trigram perplexity: {}".format(perplexity))
 
+        
 
 
         
