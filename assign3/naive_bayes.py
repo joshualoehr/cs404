@@ -58,7 +58,7 @@ def create_model(tokens, n):
 def most_probable_tokens(model, prev, num_candidates=1, blacklist=[]):
     blacklist += ["<UNK>", "<s>"]
     filter = lambda ngram: ngram[-1] not in blacklist
-
+    
     candidates = [(ngram[-1], prob) for ngram, prob in model.items() if ngram[:-1] == prev and filter(ngram)]
     candidates = sorted(candidates, key=lambda pair: pair[1], reverse=True)[:num_candidates]
     return candidates 
@@ -70,9 +70,8 @@ def generate(model, n, len_range, num=10):
     sentences = ["<s>"] * num
     probabilities = [1] * num
 
-    prev = () if n==1 else ("<s>",)
+    prev = tuple(["<s>"]*(n-1))
     sos_grams = most_probable_tokens(model, prev, num_candidates=num, blacklist=["</s>"])
-    
     sentences = list(zip(sentences, [ngram for ngram, _ in sos_grams]))
     sentences = [list(sentence) for sentence in sentences]
     probabilities = [probabilities[i] * prob for i, (_, prob) in enumerate(sos_grams)]
