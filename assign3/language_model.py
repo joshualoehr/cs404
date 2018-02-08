@@ -217,6 +217,7 @@ if __name__ == '__main__':
     for n, model_type in zip([1,2,3], ["Unigram", "Bigram", "Trigram"]):
         print("Loading {} model...".format(model_type))
         lm = LanguageModel(train, n, laplace=args.laplace)
+        print("Vocabulary size: {}".format(len(lm.vocab)))
 
         print("Generating {} sentences...".format(model_type))
         for sentence, prob in lm.generate_sentences(10):
