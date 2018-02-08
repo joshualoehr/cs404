@@ -208,6 +208,8 @@ if __name__ == '__main__':
             help='Location of the data directory containing train.txt and test.txt')
     parser.add_argument('--laplace', type=float, default=0.01,
             help='Lambda parameter for Laplace smoothing (default is 0.01 -- use 1 for add-1 smoothing)')
+    parser.add_argument('--num', type=int, default=10,
+            help='Number of sentences to generate (default 10)')
     args = parser.parse_args()
 
     # Load and prepare train/test data
@@ -220,7 +222,7 @@ if __name__ == '__main__':
         print("Vocabulary size: {}".format(len(lm.vocab)))
 
         print("Generating {} sentences...".format(model_type))
-        for sentence, prob in lm.generate_sentences(10):
+        for sentence, prob in lm.generate_sentences(args.num):
             print("{} ({:.5f})".format(sentence, prob))
 
         perplexity = lm.perplexity(test)
