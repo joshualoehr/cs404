@@ -7,9 +7,9 @@
 import argparse
 from collections import Counter
 from itertools import product
+import math
 import nltk
 from pathlib import Path
-import math
 
 def get_filepaths(data_path):
     train_path = data_path.joinpath('train.txt').absolute().as_posix()
@@ -52,7 +52,7 @@ def create_model(tokens, n):
         total_tokens = len(tokens)
         return { (unigram,): count/total_tokens for unigram, count in vocab.items() }
     if n == 2:
-        return smooth(tokens, nltk.bigrams(tokens), len(tokens.vocab()))
+        return smooth([(token,) for token in tokens], nltk.bigrams(tokens), len(tokens.vocab()))
     if n == 3:
         return smooth(nltk.bigrams(tokens), nltk.trigrams(tokens), len(tokens.vocab()))
 
@@ -63,7 +63,6 @@ def most_probable_tokens(model, prev, num_candidates=1, blacklist=[]):
     candidates = [(ngram[-1], prob) for ngram, prob in model.items() if ngram[:-1] == prev and filter(ngram)]
     candidates = sorted(candidates, key=lambda pair: pair[1], reverse=True)[:num_candidates]
     return candidates 
-
     
 def generate(model, n, len_range, num=10):
     min_length, max_length = len_range
@@ -96,13 +95,25 @@ def display_generated(model, n, len_range=(0,25)):
     for sentence, prob in generated:
         print("{} ({})".format(sentence, math.log(prob)))
 
-def compute_perplexity(model, tokens, N):
-    flatten = lambda outer: [item for inner in outer for item in inner]
-
+def compute_perplexity(model, tokens, n):
+    flatten = lambda s: (s,) if type(s) is str else s
+    all_masks = lambda n: reversed(list(product((0,1), repeat=n)))
+    mask = lambda ngram, bitmask: tuple((token if bit == 1 else "<UNK>" for token, bit in zip(ngram, bitmask)))
+    
     tokens = nltk.Text(tokens)
-    vocab = { tuple(flatten((token,))) for token in tokens.vocab() }
-    probabilities = [prob for ngram, prob in model.items() if ngram in vocab]
+    bitmasks = list(all_masks(n))
+
+    probabilities = []
+    for token in tokens:
+        for ngram in [mask(flatten(token), bitmask) for bitmask in bitmasks]:
+            if ngram in model:
+                # print(ngram, model[ngram])
+                probabilities.append(model[ngram])
+                break
+    N = len(tokens)
+    print("num probs", len(probabilities), " | num tokens:", N)
     return math.exp((-1/N)*sum(map(math.log, probabilities)))
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser("Naive Bayes Text Classifier")
@@ -127,14 +138,10 @@ if __name__ == '__main__':
 
         print("Generating unigram sentences...")
         model = create_model(tokens, n=1)
-        display_generated(model, 1, len_range)
+        # display_generated(model, 1, len_range)
 
         test_tokens = preprocess(test, n=1)
-
-        # tokens = nltk.Text(test_tokens)
-        # vocab = { tuple([token]) for token in tokens.vocab() }
-        # perplexity = compute_perplexity(model, tokens, vocab, len(test_tokens))
-        perplexity = compute_perplexity(model, test_tokens, len(test_tokens))
+        perplexity = compute_perplexity(model, test_tokens, 1)
         print("Unigram perplexity: {}".format(perplexity))
 
     if args.bigrams:
@@ -145,10 +152,10 @@ if __name__ == '__main__':
 
         print("Generating bigram sentences...")
         model = create_model(tokens, n=2)
-        display_generated(model, 2, len_range)
+        # display_generated(model, 2, len_range)
         
         test_tokens = preprocess(test, n=2)
-        perplexity = compute_perplexity(model, nltk.bigrams(test_tokens), len(test_tokens))
+        perplexity = compute_perplexity(model, nltk.bigrams(test_tokens), 2)
         print("Bigram perplexity: {}".format(perplexity))
 
     if args.trigrams:
@@ -159,10 +166,10 @@ if __name__ == '__main__':
 
         print("Generating trigram sentences...")
         model = create_model(tokens, n=3)
-        display_generated(model, 3, len_range)
+        # display_generated(model, 3, len_range)
 
         test_tokens = preprocess(test, n=3)
-        perplexity = compute_perplexity(model, nltk.trigrams(test_tokens), len(test_tokens))
+        perplexity = compute_perplexity(model, nltk.trigrams(test_tokens), 3)
         print("Trigram perplexity: {}".format(perplexity))
 
         
