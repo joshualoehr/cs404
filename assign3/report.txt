@@ -1,0 +1,29 @@
+###############################################################################
+# CSCI 404 - Assignment 3 - Josh Loehr & Robin Cosbey - language_model.py     #
+###############################################################################
+
+Methods/Models:
+* preprocess() 
+    add sos and eos, combine sentences, replace singletons with unk,
+    return nltk.Text ordered list of tokens
+* LanguageModel
+    unigrams = probabilities, bigrams/trigrams = smoothed probabilities (lambda=0.01),
+    return a dictionary containing the token or ngram as key and count as value
+* generate_sentences()
+    find the 10 most probable first tokens to follow the sos
+    for each of the 10 most probable tokens, repeated find the most probable token
+    in the next timestep until eos token or maximum sentence length is reached,
+    return the generated 10 sentences
+* perplexity()
+    preprocess the test data, compute the probabilities for each ngram created with 
+    the test data, return the result of the perplexity equation
+    
+Assumptions:
+- In creating our ngram models, we applied the Markov Assumption in generating new
+sentences. Additionally, when computing probabilities, we applied the conditional
+independence assumption.
+
+Results Discussion:
+- When we created our bigram and trigram models with add-one smoothing, we received
+very high perplexity values. This led us to try add-lambda smoothing which 
+lowered our perplexities and increased the quality of the sentences we generated.
