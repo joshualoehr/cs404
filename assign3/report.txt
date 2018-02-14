@@ -4,26 +4,87 @@
 
 Methods/Models:
 * preprocess() 
-    add sos and eos, combine sentences, replace singletons with unk,
-    return nltk.Text ordered list of tokens
-* LanguageModel
-    unigrams = probabilities, bigrams/trigrams = smoothed probabilities (lambda=0.01),
-    return a dictionary containing the token or ngram as key and count as value
+    add sos and eos, combine sentences, replace singletons with unk
+    return an ordered list of the tokens present in the provided file
+* language_model()
+    unigrams = probabilities, bigrams/trigrams = smoothed probabilities (lambda=0.01)
+    return a dictionary containing the token or ngram as key and probability as value
 * generate_sentences()
     find the 10 most probable first tokens to follow the sos
-    for each of the 10 most probable tokens, repeated find the most probable token
-    in the next timestep until eos token or maximum sentence length is reached,
-    return the generated 10 sentences
+    for each of the 10 most probable tokens, repeatedly find the most probable token
+    in the next timestep until eos token or maximum sentence length is reached
+    return the 10 generated sentences and the corresponding negative log probabilities
 * perplexity()
     preprocess the test data, compute the probabilities for each ngram created with 
-    the test data, return the result of the perplexity equation
+    the test data, return the result of the perplexity equation provided to us
     
 Assumptions:
 - In creating our ngram models, we applied the Markov Assumption in generating new
-sentences. Additionally, when computing probabilities, we applied the conditional
-independence assumption.
+sentences. In the case of the bigram method, we computed our probilities with information
+from the previous word. With trigrams, we computed probabilities with information from 
+the two previous words. Additionally, when computing probabilities, we applied the 
+conditional independence assumption.
 
 Results Discussion:
 - When we created our bigram and trigram models with add-one smoothing, we received
-very high perplexity values. This led us to try add-lambda smoothing which 
-lowered our perplexities and increased the quality of the sentences we generated.
+very high perplexity values. This led us to try add-lambda smoothing with a lambda
+value of 0.01 which gave us lower perplexity values. We also found that with the lower
+value we produced higher quality sentences.  
+- If we had additional time, we would have liked to introduce randomness to our 
+generation process in order to generate more varied sentences - at present, we
+only look at the most probable next token given the previous token.
+
+
+Results Output:
+
+Script started on Thu 08 Feb 2018 04:38:20 PM PST
+cosbeyr@cf420-10:~/CSCI404/cs404/assign3$ python3 language_model.py --data data
+Loading Unigram model...
+Vocabulary size: 23505
+Generating Unigram sentences...
+<s> the of to in and said a mln for dlrs vs </s> (0.02054)
+<s> of to in and said a mln for dlrs vs it </s> (0.01978)
+<s> to in and said a mln for dlrs vs it pct of on is from its that at by be cts year will </s> (0.00904)
+<s> in and said a mln for dlrs vs it pct on to is from its that at by be cts year will with </s> (0.00890)
+<s> and said a mln for dlrs vs it pct on is in from its that at by be cts year will with billion </s> (0.00876)
+<s> said a mln for dlrs vs it pct on is from and its that at by be cts year will with billion net </s> (0.00864)
+<s> a mln for dlrs vs it pct on is from its said that at by be cts year will with billion net was </s> (0.00853)
+<s> mln for dlrs vs it pct on is from its that a at by be cts year will with billion net was us </s> (0.00841)
+<s> for dlrs vs it pct on is from its that at mln by be cts year will with billion net was us he </s> (0.00830)
+<s> dlrs vs it pct on is from its that at by for be cts year will with billion net was us he has </s> (0.00821)
+Unigram model perplexity: 762.939
+
+Loading Bigram model...
+Vocabulary size: 23505
+Generating Bigram sentences...
+<s> the company said it has been made a share in 1986 </s> (0.03374)
+<s> it said the company also be a share in 1986 87 03 09 pct of its board </s> (0.01975)
+<s> shr loss of the company said it has been made a share </s> (0.03131)
+<s> he said it has been made a share in the company </s> (0.03295)
+<s> in the company said it has been made a share of its board </s> (0.02602)
+<s> but the company said it has been made a share in 1986 </s> (0.02921)
+<s> a share in the company said it has been made by an agreement to be used for one of its board </s> (0.01582)
+<s> us and the company said it has been made a share </s> (0.03029)
+<s> this year shr loss of the company said it has been made a share </s> (0.02688)
+<s> they said it has been made a share in the company </s> (0.03116)
+Bigram model perplexity: 85.795
+
+Loading Trigram model...
+Vocabulary size: 23505
+Generating Trigram sentences...
+<s> <s> the company said it has agreed to sell its shares in a statement </s> (0.03163)
+<s> <s> it said the company also announced a 1986 loss of about 20 pct </s> (0.02104)
+<s> <s> shr loss one ct vs profit two cts net 119 mln dlrs </s> (0.02536)
+<s> <s> he said the company also announced a 1986 loss of about 20 pct </s> (0.02078)
+<s> <s> in a statement that the us agriculture department said it has agreed to sell its shares for each share of common stock </s> (0.01756)
+<s> <s> but the company said it has agreed to sell its shares in a statement </s> (0.02676)
+<s> <s> a spokesman for the first quarter of 1987 and 1986 respectively </s> (0.02991)
+<s> <s> us officials said the company also announced a 1986 loss of about 20 pct </s> (0.01836)
+<s> <s> this is a major trade bill that would be the first quarter of 1987 </s> (0.02182)
+<s> <s> they said the company also announced a 1986 loss of about 20 pct </s> (0.02006)
+Trigram model perplexity: 51.555
+
+cosbeyr@cf420-10:~/CSCI404/cs404/assign3$ exit
+exit
+
+Script done on Thu 08 Feb 2018 04:41:36 PM PST
