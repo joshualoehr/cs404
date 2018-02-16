@@ -93,10 +93,10 @@ def f_score(true_pos, false_pos, false_neg):
     rec = recall(true_pos, false_neg)
     return 100 * 2 * prec * rec / (prec + rec)
 
-def output(true_pos, true_neg, false_pos, false_neg):
+def output(true_pos, true_neg, false_pos, false_neg, model_name):
     """Ouput the TP, TN, FP, and FN results in a 2x2 table."""
     print()
-    print('Evaluation of Naive Bayes Classifer:')
+    print('Evaluation of {}:'.format(model_name))
     print()
     print('      {:^6s}   {:^6s}'.format('True', 'False'))
     print('    +-{}-+-{}-+'.format('-'*6, '-'*6))
@@ -119,6 +119,7 @@ if __name__ == '__main__':
             help='Directory containing the positive test documents (i.e. spam).')
     parser.add_argument('--test-negatives', '-n', type=valid_dir, required=True,
             help='Directory containing the negative test documents (i.e. nonspam).')
+    parser.add_argument('--name', type=str, default='Naive Bayes Classifier')
     args = parser.parse_args()
 
     # Load the model, and spam/nonspam documents
@@ -135,8 +136,8 @@ if __name__ == '__main__':
     false_neg = len(spam_docs) - true_pos
 
     # Count results from true-nonspam documents
-    true_neg = len([result for result in spam_results if result == 'nonspam'])
+    true_neg = len([result for result in nonspam_results if result == 'nonspam'])
     false_pos = len(nonspam_docs) - true_neg
     
     # Print the results in a table
-    output(true_pos, true_neg, false_pos, false_neg)
+    output(true_pos, true_neg, false_pos, false_neg, args.name)

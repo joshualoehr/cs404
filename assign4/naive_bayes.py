@@ -64,14 +64,14 @@ class NaiveBayesClassifier(object):
         if not self.prior_probs.get(cls):
             class_total = len(self.train_documents[cls])
             doc_total = sum(map(len, self.train_documents.values()))
-            self.prior_probs[cls] = log(class_total / doc_total)
-        return self.prior_probs[cls]
+            self.prior_probs[cls] = class_total / doc_total
+        return log(self.prior_probs[cls])
     
     def word_prob(self, word, cls):
         return log(self.count(word, cls) / self.total_count(cls))
 
     def document_prob(self, cls, document):
-        return sum([self.word_prob(word, cls) for word in self.document_features(document)])
+        return sum([self.word_prob(word, cls) for word,count in self.document_features(document).items() if count > 0])
 
     def classify(self, document):
         return max(['spam', 'nonspam'], key=lambda c: self.prior_prob(c) + self.document_prob(c, document))
@@ -84,11 +84,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser('Naive Bayes Classifier')
     parser.add_argument('--data', type=str, required=True,
             help='Path to the directory containing training and testing data subdirectories.')
+    parser.add_argument('--model-name', type=str, default='classifier.pkl',
+            help='Name to save model as.')
     args = parser.parse_args()
 
     train = load_data(args.data, "train")
     test = load_data(args.data, "test")
 
     classifier = NaiveBayesClassifier(train, test)
-    classifier.save('classifier.pkl')
+    classifier.save(args.model_name)
 

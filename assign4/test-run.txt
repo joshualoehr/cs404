@@ -1,0 +1,63 @@
+Script started on Fri 16 Feb 2018 03:33:37 PM PST
+]0;loehrj@cf420-16: ~/cs404/assign4loehrj@cf420-16:~/cs404/assign4$ source ../activate
+(venv) ]0;loehrj@cf420-16: ~/cs404/assign4loehrj@cf420-16:~/cs404/assign4$ for i in 50 100 400 700; do python eval.py --model model$i.pkl -p  data/test/spam -n data/test/nonspam --name "Naive Bayes Classifier w/ $i Training Samples"; done
+
+Evaluation of Naive Bayes Classifier w/ 50 Training Samples:
+
+       True    False 
+    +--------+--------+
+Pos |  127   |   8    |
+    +--------+--------+
+Neg |  122   |   3    |
+    +--------+--------+
+
+Precision: 0.941
+Recall:    0.977
+F-Score:   95.849%
+
+
+Evaluation of Naive Bayes Classifier w/ 100 Training Samples:
+
+       True    False 
+    +--------+--------+
+Pos |  127   |   8    |
+    +--------+--------+
+Neg |  122   |   3    |
+    +--------+--------+
+
+Precision: 0.941
+Recall:    0.977
+F-Score:   95.849%
+
+
+Evaluation of Naive Bayes Classifier w/ 400 Training Samples:
+
+       True    False 
+    +--------+--------+
+Pos |  128   |   2    |
+    +--------+--------+
+Neg |  128   |   2    |
+    +--------+--------+
+
+Precision: 0.985
+Recall:    0.985
+F-Score:   98.462%
+
+
+Evaluation of Naive Bayes Classifier w/ 700 Training Samples:
+
+       True    False 
+    +--------+--------+
+Pos |  128   |   4    |
+    +--------+--------+
+Neg |  126   |   2    |
+    +--------+--------+
+
+Precision: 0.970
+Recall:    0.985
+F-Score:   97.710%
+
+(venv) ]0;loehrj@cf420-16: ~/cs404/assign4loehrj@cf420-16:~/cs404/assign4$ exit
+exit
+
+Script done on Fri 16 Feb 2018 03:33:55 PM PST
