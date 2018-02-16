@@ -82,6 +82,12 @@ def load_docs(dirpath):
     return docs
 
 
+def precision(true_pos, false_pos):
+    return true_pos / (true_pos + false_pos)
+
+def recall(true_pos, false_neg):
+    return true_pos / (true_pos + false_neg)
+
 def output(true_pos, true_neg, false_pos, false_neg):
     """Ouput the TP, TN, FP, and FN results in a 2x2 table."""
     print()
@@ -93,6 +99,10 @@ def output(true_pos, true_neg, false_pos, false_neg):
     print('    +-{}-+-{}-+'.format('-'*6, '-'*6))
     print('Neg | {:^6d} | {:^6d} |'.format(true_neg, false_neg))
     print('    +-{}-+-{}-+'.format('-'*6, '-'*6))
+    print()
+    print('Precision: {}'.format(precision(true_pos, false_pos)))
+    print('Recall:    {}'.format(recall(true_pos, false_neg)))
+    print()
 
 
 if __name__ == '__main__':
