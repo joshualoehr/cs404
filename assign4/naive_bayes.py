@@ -4,6 +4,7 @@ import glob
 import nltk
 import itertools
 from math import log
+import pickle
 from functools import reduce
 from operator import mul
 
@@ -68,11 +69,14 @@ class NaiveBayesClassifier(object):
     def classify(self, document):
         return max(['spam', 'nonspam'], key=lambda c: self.prior_prob(c)*self.document_prob(c, document))
 
+    def save(self, filepath):
+        with open(filepath, 'wb+') as f:
+            pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
+
 if __name__ == '__main__':
     train = load_data("train")
     test = load_data("test")
 
     classifier = NaiveBayesClassifier(train, test)
+    classifier.save('classifier.pkl')
 
-    for doc in train[0][:30]:
-        print(classifier.classify(doc))
