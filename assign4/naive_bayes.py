@@ -1,5 +1,6 @@
 #!/bin/env python
 
+import argparse
 import glob
 import nltk
 import itertools
@@ -8,13 +9,13 @@ import pickle
 from functools import reduce
 from operator import mul
 
-def load_data(dataset):
+def load_data(datapath, dataset):
     spam=[] 
     nonspam=[]
-    for filename in glob.glob('data/{}-{}/*.txt'.format("spam", dataset)):
+    for filename in glob.glob('{}/{}-{}/*.txt'.format(datapath, "spam", dataset)):
         with open(filename, 'r') as f:
             spam.append(f.read().strip().split(' '))
-    for filename in glob.glob('data/{}-{}/*.txt'.format("nonspam", dataset)):
+    for filename in glob.glob('{}/{}-{}/*.txt'.format(datapath, "nonspam", dataset)):
         with open(filename, 'r') as f:
             nonspam.append(f.read().strip().split(' '))
     return (spam, nonspam)
@@ -32,6 +33,8 @@ class NaiveBayesClassifier(object):
                 self.vocabulary[word] += count
 
         self.features = [word for word,_ in self.vocabulary.most_common(num_features)]
+        self.total_counts = {}
+        self.prior_probs  = {}
 
     def build_vocab(self, spam, nonspam):
         vocabulary = nltk.ConditionalFreqDist()
@@ -53,12 +56,16 @@ class NaiveBayesClassifier(object):
         return self.train_vocab[cls][word] + 1
 
     def total_count(self, cls):
-        return sum(self.train_vocab[cls].values()) + len(self.features)
+        if not self.total_counts.get(cls):
+            self.total_counts[cls] = sum([self.count(word, cls) for word in self.features])
+        return self.total_counts[cls] + len(self.features)
 
     def prior_prob(self, cls):
-        class_total = len(self.train_documents[cls])
-        doc_total = sum(map(len, self.train_documents.values()))
-        return log(class_total / doc_total)
+        if not self.prior_probs.get(cls):
+            class_total = len(self.train_documents[cls])
+            doc_total = sum(map(len, self.train_documents.values()))
+            self.prior_probs[cls] = log(class_total / doc_total)
+        return self.prior_probs[cls]
     
     def word_prob(self, word, cls):
         return log(self.count(word, cls) / self.total_count(cls))
@@ -67,15 +74,20 @@ class NaiveBayesClassifier(object):
         return sum([self.word_prob(word, cls) for word in self.document_features(document)])
 
     def classify(self, document):
-        return max(['spam', 'nonspam'], key=lambda c: self.prior_prob(c)*self.document_prob(c, document))
+        return max(['spam', 'nonspam'], key=lambda c: self.prior_prob(c) + self.document_prob(c, document))
 
     def save(self, filepath):
         with open(filepath, 'wb+') as f:
             pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
 
 if __name__ == '__main__':
-    train = load_data("train")
-    test = load_data("test")
+    parser = argparse.ArgumentParser('Naive Bayes Classifier')
+    parser.add_argument('--data', type=str, required=True,
+            help='Path to the directory containing training and testing data subdirectories.')
+    args = parser.parse_args()
+
+    train = load_data(args.data, "train")
+    test = load_data(args.data, "test")
 
     classifier = NaiveBayesClassifier(train, test)
     classifier.save('classifier.pkl')
