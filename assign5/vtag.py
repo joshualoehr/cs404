@@ -19,14 +19,35 @@ def txtfile(filepath):
 
 class Viterbi(object):
 
-    def __init__(self, train):
+    def __init__(self, train, raw, onecount=False):
         self.train = train
+        self.raw_vocab = nltk.FreqDist([word for word,_ in train] + raw)
+        self.sing_tt_counts = {}
+        self.sing_tw_counts = {}
         self.word_counts = nltk.FreqDist([word for word,_ in train]) 
         self.tag_counts  = nltk.FreqDist([tag for _,tag in train])
         self.word_tag_counts = nltk.FreqDist(train)
-        self.tt_probs, self.tw_probs = self.calculate_probabilities()
+        self.tt_probs, self.tw_probs = self.calculate_probabilities(onecount=onecount)
+        
+    def sing_tt(self, prev_tag):
+        if prev_tag not in self.sing_tt_counts:
+            singletons = [tag for tag,count in self.tag_counts.items() if count == 1]
+            self.sing_tt_counts[prev_tag] = len(singletons)
+        return self.sing_tt_counts[prev_tag]
 
-    def calculate_probabilities(self):
+    def sing_tw(self, tag):
+        if tag not in self.sing_tw_counts:
+            singletons = [t for (word,t),count in self.word_tag_counts.items() if count == 1]
+            self.sing_tw_counts[tag] = len(singletons)
+        return self.sing_tw_counts[tag]
+
+    def backoff_tt_prob(self, tag):
+        return self.tag_counts[tag] / len(self.train)
+
+    def backoff_tw_prob(self, word):
+        return (self.word_counts[word] + 1) / (len(self.train) + len(self.raw_vocab) + 1)
+
+    def calculate_probabilities(self, onecount=False):
         tt_probs = {}
         tw_probs = {}
 
@@ -36,16 +57,31 @@ class Viterbi(object):
         for prev_gram, next_gram in nltk.bigrams(self.train):
             _, prev_tag = prev_gram
             next_word, next_tag = next_gram
-
             tag_bigram = (prev_tag, next_tag)
-            if not tt_probs.get(tag_bigram):
-                tt_probs[tag_bigram] = (tag_bigram_counts[tag_bigram]+1) / (self.tag_counts[prev_tag]+len(self.tag_counts))
 
-            if not tw_probs.get(next_gram):
-                if next_gram == ('###','###'):
-                    tw_probs[next_gram] = self.word_tag_counts[next_gram] / self.tag_counts[next_tag]
-                else:
-                    tw_probs[next_gram] = (self.word_tag_counts[next_gram]+1) / (self.tag_counts[next_tag]+len(self.tag_counts))
+            if not onecount:
+                if not tt_probs.get(tag_bigram):
+                    tt_probs[tag_bigram] = (tag_bigram_counts[tag_bigram]+1) / (self.tag_counts[prev_tag]+len(self.tag_counts))
+
+                if not tw_probs.get(next_gram):
+                    if next_gram == ('###','###'):
+                        tw_probs[next_gram] = self.word_tag_counts[next_gram] / self.tag_counts[next_tag]
+                    else:
+                        tw_probs[next_gram] = (self.word_tag_counts[next_gram]+1) / (self.tag_counts[next_tag]+len(self.tag_counts))
+
+            else:
+                if not tt_probs.get(tag_bigram):
+                    lam = 1 + self.sing_tt(prev_tag)
+                    backoff = lam * self.backoff_tt_prob(next_tag)
+                    tt_probs[tag_bigram] = (tag_bigram_counts[tag_bigram]+backoff) / (self.tag_counts[prev_tag]+lam)
+
+                if not tw_probs.get(next_gram):
+                    if next_gram == ('###','###'):
+                        tw_probs[next_gram] = self.word_tag_counts[next_gram] / self.tag_counts[next_tag]
+                    else:
+                        lam = 1 + self.sing_tw(next_tag)
+                        backoff = lam * self.backoff_tw_prob(next_word)
+                        tw_probs[next_gram] = (self.word_tag_counts[next_gram]+backoff) / (self.tag_counts[next_tag]+lam)
 
         return tt_probs, tw_probs
 
@@ -127,9 +163,11 @@ if __name__ == '__main__':
             help="The tagged training data, with a single word/tag pair per line.")
     parser.add_argument("test", type=txtfile,
             help="The tagged testing data, with a single word/tag pair per line.")
+    parser.add_argument("raw", type=txtfile,
+            help="The raw untagged data, with a single word per line.")
     args = parser.parse_args()
 
-    viterbi = Viterbi(args.train)
+    viterbi = Viterbi(args.train, args.raw, onecount=True)
     tag_seq = viterbi.decode([word for word,_ in args.test])
     print(tag_seq)
     viterbi.evaluate(args.test, tag_seq)
