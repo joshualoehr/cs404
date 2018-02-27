@@ -39,68 +39,66 @@ class Viterbi(object):
 
             tag_bigram = (prev_tag, next_tag)
             if not tt_probs.get(tag_bigram):
-                tt_probs[tag_bigram] = tag_bigram_counts[tag_bigram] / self.tag_counts[prev_tag]
+                tt_probs[tag_bigram] = (tag_bigram_counts[tag_bigram]+1) / (self.tag_counts[prev_tag]+len(self.tag_counts))
 
             if not tw_probs.get(next_gram):
-                tw_probs[next_gram] = self.word_tag_counts[next_gram] / self.tag_counts[next_tag]
+                if next_gram == ('###','###'):
+                    tw_probs[next_gram] = self.word_tag_counts[next_gram] / self.tag_counts[next_tag]
+                else:
+                    tw_probs[next_gram] = (self.word_tag_counts[next_gram]+1) / (self.tag_counts[next_tag]+len(self.tag_counts))
 
         return tt_probs, tw_probs
 
-    def decode(self, sequence):
-        # self.tt_probs = { ('S','S'): 0.8, ('S','V'): 0.2, ('V','S'): 0.4, ('V','V'): 0.6, ('###','S'): 0.5, ('###','V'): 0.5 }
-        # self.tw_probs = { ('G','S'): 0.5, ('F','S'): 0.5, ('G','V'): 0.8, ('F','V'): 0.2, ('###','###'): 1.0 }
+    def possible_tags(self, w):
+        tags = [tag for (word,tag),count in self.word_tag_counts.items() if word == w]
+        if not tags:
+            return [tag for tag in self.tag_counts if tag != '###']
+        else:
+            return tags
 
-        print(self.tt_probs)
-        print(self.tw_probs)
+    def unknown_prob(self, tag):
+        return 1 / (self.tag_counts[tag] + len(self.tag_counts))
+
+    def decode(self, sequence):
+        sequence = sequence + ['###']
+
         log = lambda x: math.log(x)
-        tags = [tag for tag in self.tag_counts.keys() if tag != '###']
-        # tags = ['###','S','V']
+        tags = [tag for tag in self.tag_counts.keys()]
 
         T = len(sequence)
         N = len(tags)
         viterbi_probs = []
-        backpointer = []
 
-        initial_tt_probs = [self.tt_probs.get(('###', tag), 0.0000001) for tag in tags]
-        initial_tw_probs = [self.tw_probs.get((sequence[1], tag), 0.0000001) for tag in tags]
-        print(list(zip(initial_tt_probs, initial_tw_probs)))
-        initial_probs = [reduce(mul, probs) for probs in zip(initial_tt_probs, initial_tw_probs)]
-        initial_probs = map(log, initial_probs)
-        initial_probs = list(zip(initial_probs, tags))
+        viterbi_probs.append({'###': (1, '')})
+        for j in range(1, T):
+            viterbi_probs.append({ tag: (-float("inf"), '') for tag in tags })
 
-        viterbi_probs.append(initial_probs)
-        print(initial_probs)
-        print()
+            word = sequence[j]
+            tag_dict = self.possible_tags(word)
 
-        for j, word in list(enumerate(sequence[1:]))[1:]:
-            viterbi_probs.append([(-float("inf"), '')]*N)
+            for tag in tag_dict:
 
-            for i, tag in enumerate(tags):
+                prev_word = sequence[j-1]
+                prev_tag_dict = self.possible_tags(prev_word)
 
-                for prev_tag in tags:
-                    tt_prob = log(self.tt_probs.get((prev_tag, tag), 0.0000001)) # 0.0000001 is wrong, store log probabilities to begin with
-                    tw_prob = log(self.tw_probs.get((word, tag), 0.0000001))
-                    v = viterbi_probs[j-1][i][0] + tt_prob + tw_prob
-                    print("{}_{} -> {}_{} = {:.5f} + {} + {} = {:.5f}".format(prev_tag, j-1, tag, j, viterbi_probs[j-1][i][0], tt_prob, tw_prob, v))
+                for prev_tag in prev_tag_dict:
 
-                    if v >= viterbi_probs[j][i][0]:
-                        viterbi_probs[j][i] = (v, prev_tag)
-            print("word:{}, v's:{}".format(word, viterbi_probs[j]))
-            print()
+                    tt_prob = self.tt_probs.get((prev_tag, tag), self.unknown_prob(tag))
+                    tw_prob = self.tw_probs.get((word, tag), self.unknown_prob(tag))
+                    p = log(tt_prob * tw_prob)
+                    v = viterbi_probs[j-1][prev_tag][0] + p
+                    if v > viterbi_probs[j][tag][0]:
+                        viterbi_probs[j][tag] = (v, prev_tag)
+                    
 
-        for probs in viterbi_probs:
-            print(' '.join(['{:.4f}'.format(prob) for prob,_ in probs]))
-        print()
+        sequence_tags = ['###']
+        tag = '###'
+        for j in reversed(range(1, T)):
+            _,prev_tag = viterbi_probs[j][tag]
+            tag = prev_tag
+            sequence_tags.append(tag)
 
-        tag_lookup = { tag: idx for idx,tag in enumerate(tags)}
-        sequence_tags = []
-        sequence_tags.append(max(viterbi_probs[T-2], key=lambda pair: pair[0])[1])
-        for j in reversed(range(0, T-2)):
-            i = tag_lookup[sequence_tags[-1]]
-            sequence_tags.append(viterbi_probs[j][i][1])
-        sequence_tags.append('###')
-
-        return list(reversed(sequence_tags))
+        return list(reversed(sequence_tags[1:]))
 
         
     def evaluate(self, test_seq, tag_seq):
