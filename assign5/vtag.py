@@ -40,13 +40,13 @@ class Viterbi(object):
         
     def sing_tt(self, prev_tag):
         if prev_tag not in self.sing_tt_counts:
-            singletons = [tag for tag,count in self.tag_counts.items() if count == 1]
+            singletons = [tag for tag,count in self.tag_counts.items() if tag == prev_tag and count == 1]
             self.sing_tt_counts[prev_tag] = len(singletons)
         return self.sing_tt_counts[prev_tag]
 
     def sing_tw(self, tag):
         if tag not in self.sing_tw_counts:
-            singletons = [t for (word,t),count in self.word_tag_counts.items() if count == 1]
+            singletons = [t for (word,t),count in self.word_tag_counts.items() if t == tag and count == 1]
             self.sing_tw_counts[tag] = len(singletons)
         return self.sing_tw_counts[tag]
 
@@ -164,7 +164,6 @@ class Viterbi(object):
                     v = viterbi_probs[j-1][prev_tag][0] + p
                     if v >= viterbi_probs[j][tag][0]:
                         viterbi_probs[j][tag] = (v, prev_tag)
-                    
 
         sequence_tags = ['###']
         tag = '###'
@@ -177,8 +176,7 @@ class Viterbi(object):
 
         
     def evaluate(self, test_seq, tag_seq):
-        sequence = [(word, test_tag, pred_tag) for (word, test_tag), pred_tag in zip(test_seq, tag_seq) ]
-        sequence = sequence[1:] # ignore SOS token
+        sequence = [(word, test_tag, pred_tag) for (word, test_tag), pred_tag in zip(test_seq, tag_seq) if word != '###']
 
         overall_count, known_count, novel_count = 0, 0, 0
         known_total, novel_total = 0, 0
@@ -211,7 +209,5 @@ if __name__ == '__main__':
 
     viterbi = Viterbi(args.train, args.raw, smoothing=args.smoothing)
     tag_seq = viterbi.decode([word for word,_ in args.test])
-    print(tag_seq)
-    print([tag for _,tag in args.test])
     viterbi.evaluate(args.test, tag_seq)
     
