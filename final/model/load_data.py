@@ -5,24 +5,18 @@ from all documents in .npy array files.
 """
 
 import argparse
+import glob
 import os
 import os.path as osp
 import numpy as np
 
 def parseArgs():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_dir", required=True, type=str, help="Directory containing label and feature files.")
+    parser.add_argument("--label_files", required=True, type=glob.glob, help="List of paths to all label files for a given set.")
+    parser.add_argument("--feat_files", required=True, type=glob.glob, help="List of paths to all feature files for a given set.")
     parser.add_argument("--set_name", required=True, type=str, help="Name of dataset to load (e.g. train).")
     parser.add_argument("--out_dir",  required=True, type=str, help="Directory to write binary files to.")
     return parser.parse_args()
-
-def getFiles(data_dir):
-    """
-    Return a list of label files and a list of the corresponding feature files.
-    """
-    label_files = sorted([osp.join(data_dir, f) for f in os.listdir(data_dir) if osp.isfile(osp.join(data_dir, f)) and "label" in f])
-    feat_files = sorted([osp.join(data_dir, f) for f in os.listdir(data_dir) if osp.isfile(osp.join(data_dir, f)) and "feat" in f])
-    return label_files, feat_files
 
 def padFiles(all_labels, all_feats,  max_len):
     """
@@ -69,11 +63,11 @@ def makeBinaries(outfile, labels, feats, all_lens):
 
 def main():
     args = parseArgs()
-    data_dir = args.data_dir + "/" if args.data_dir[-1] != "/" else args.data_dir
     out_dir = args.out_dir + "/" if args.out_dir[-1] != "/" else args.out_dir
     outfile = out_dir + args.set_name 
 
-    label_files, feat_files = getFiles(data_dir)
+    label_files = sorted(args.label_files)
+    feat_files = sorted(args.feat_files)
     labels, feats, all_lens = loadFiles(label_files, feat_files)
     makeBinaries(outfile, labels, feats, all_lens)
     
