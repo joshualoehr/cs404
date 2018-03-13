@@ -7,7 +7,14 @@ from xml.etree import ElementTree as ET
 
 def replace_text(nodes, replace):
     for node in nodes:
-        node.text = replace(node.text)
+        node.text = replace(node)
+
+def remove_references_section(article, parent_map):
+    possible_titles = ['references', 'bibliography', 'works cited', 'footnotes', 'acknowledgements']
+    for node in article.findall('.//HEADER'):
+        if node.text.lower().strip() in possible_titles:
+            div = parent_map[node]
+            parent_map[div].remove(div)
 
 def scrape_text(xml):
     with open(xml, 'r') as f:
@@ -19,12 +26,19 @@ def scrape_text(xml):
         print("Error parsing file: {}: {}".format(xml, e))
         return None, None
 
+    parent_map = dict((c,p) for p in root.iter() for c in p)
+
     abstract = root.find('ABSTRACT')
     abstract_text = ' '.join(list(abstract.itertext()))
     
     article  = root.find('BODY')
-    replace_text(article.findall('*/HEADER'), lambda text: '{{%s}}' % text)
+    remove_references_section(article, parent_map)
+    replace_text(article.findall('.//HEADER'), lambda node: '. {{H%s}}.' % parent_map[node].get('ID'))
+    replace_text(article.findall('.//REF'), lambda node: '{{REF}}')
+    replace_text(article.findall('.//CREF'), lambda node: '{{REF}}')
+    replace_text(article.findall('.//EQN'), lambda node: '{{EQN}}')
     article_text = ' '.join(list(article.itertext()))
+    article_text = ' '.join(article_text.split())
 
     return article_text, abstract_text
 
@@ -49,3 +63,4 @@ if __name__ == '__main__':
         article, abstract = scrape_text(xml) 
         if article and abstract: 
             write_output(xml, article, abstract)
+
