@@ -3,6 +3,9 @@ Load all label and feature files. Store labels from all labels and corresponding
 from all documents in .npy array files. Additionally store abstracts and document identifiers
 if specified by the user.
 
+python load_data.py --data "data/*_train/*" --set_name train --out_dir npy_data/train --sent_len 5 
+python load_data.py --data "data/*_test/*" --set_name test --out_dir npy_data/test/ --sent_len 5 -save_abs
+
 """
 
 import argparse
@@ -20,7 +23,6 @@ def parseArgs():
         help="Directory to write binary files to.")
     parser.add_argument("--sent_len", required=True, type=int)
     parser.add_argument("-save_abs", action='store_true')
-       
  
     return parser.parse_args()
 
@@ -129,6 +131,7 @@ def main():
         abstracts, documents = loadAbstracts(abs_files, doc_files)
         makeAbstractBinary(outfile, abstracts, documents, names)
     all_labels, all_lens = loadLabels(label_files)
+    
     all_feats = loadFeatures(feat_files, args.sent_len)
     labels, feats = padFiles(all_labels, all_feats, max(all_lens))
     makeBinaries(outfile, labels, feats, all_lens)
