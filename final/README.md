@@ -29,4 +29,6 @@ python vector_compare.py "pubmed/data/*"
 ```
 
 Note: for parallelized batch downloading of medline documents over C cores, use:
-```seq 0 B | xargs -n1 -P C ./pubmed/batch_download.sh```
+```
+seq 0 B | xargs -n1 -P C ./pubmed/batch_download.sh
+```
