@@ -95,11 +95,11 @@ def preprocess(tokens):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Preprocess medline abstract and article texts.')
-    parser.add_argument('documents', type=glob.glob,
+    parser.add_argument('documents', type=glob.iglob,
             help='Glob pattern of documents (directories) to preprocess.')
     args = parser.parse_args()
     
-    for doc_dir in args.documents:
+    for doc_dir in filter(os.path.isdir, args.documents):
         for doc_part in ['article', 'abstract']:
             doc_txt = '{}/{}.txt'.format(doc_dir, doc_part)
             with open(doc_txt, 'r') as f:

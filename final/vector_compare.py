@@ -2,6 +2,7 @@
 
 import argparse
 import glob
+import os
 from scipy.sparse import csr_matrix, lil_matrix
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -47,7 +48,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     
-    for doc in args.documents:
+    for doc in filter(os.path.isdir, args.documents):
         abstract = '{}/abstract.tfidf'.format(doc)
         abstract_vecs = load_tfidf_vecs(abstract)
 

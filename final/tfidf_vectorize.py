@@ -2,6 +2,7 @@
 
 import argparse
 import glob
+import os
 import re
 from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -12,7 +13,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     doc_sents = {}
-    for doc_dir in args.documents:
+    for doc_dir in filter(os.path.isdir, args.documents):
         for doc_part in ['article', 'abstract']:
             doc_tokens = '{}/{}.tokens'.format(doc_dir, doc_part)
             with open(doc_tokens, 'r') as f:
