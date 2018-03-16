@@ -17,10 +17,9 @@ def remove_references_section(article, parent_map):
             parent_map[div].remove(div)
 
 def scrape_text(xml):
-    with open(xml, 'r') as f:
-        data = f.read().replace('\n', ' ')
-
     try:
+        with open(xml, 'r') as f:
+            data = f.read().replace('\n', ' ')
         root = ET.fromstring(data)
     except Exception as e:
         print("Error parsing file: {}: {}".format(xml, e))
@@ -47,16 +46,16 @@ def write_output(xml, article, abstract):
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
         os.rename(xml, "{}/{}".format(output_dir, os.path.basename(xml)))
-    with open('{}/article.txt'.format(output_dir), 'w+') as f:
+    with open('{}/article.txt'.format(output_dir), 'bw+') as f:
         f.write(article.encode('utf-8'))
-    with open('{}/abstract.txt'.format(output_dir), 'w+') as f:
+    with open('{}/abstract.txt'.format(output_dir), 'bw+') as f:
         f.write(abstract.encode('utf-8'))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Scrape abstract and article text from cmp-lg .xml files.')
     parser.add_argument('files', type=glob.glob,
-            help='Glob pattern of files to scrape.')
+            help='Glob pattern of .xml files to scrape.')
     args = parser.parse_args()
 
     for xml in args.files:

@@ -29,7 +29,7 @@ def calc_similarity(article_vec, abstract_vecs):
 
 def get_rankings(similarities):
     similarities = list(enumerate(similarities))
-    similarities = sorted(similarities, key=lambda s: s[1])
+    similarities = sorted(similarities, key=lambda s: s[1], reverse=True)
     similarities = [(idx, rank) for rank, (idx, score) in enumerate(similarities)]
     similarities = sorted(similarities, key=lambda s: s[0])
     similarities = [rank for idx, rank in similarities]
@@ -48,10 +48,10 @@ if __name__ == '__main__':
 
     
     for doc in args.documents:
-        abstract = '{}/abstract.scores'.format(doc)
+        abstract = '{}/abstract.tfidf'.format(doc)
         abstract_vecs = load_tfidf_vecs(abstract)
 
-        article  = '{}/article.scores'.format(doc)
+        article  = '{}/article.tfidf'.format(doc)
         article_vecs  = load_tfidf_vecs(article)
         
         similarities = [calc_similarity(vec, abstract_vecs) for vec in article_vecs]

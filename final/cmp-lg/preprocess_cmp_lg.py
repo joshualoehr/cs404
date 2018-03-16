@@ -23,11 +23,9 @@ stemmer = SnowballStemmer('english')
 roman_numeral_regex = re.compile('[0-9\.]*[ivx]+')
 ordering_regex = re.compile('[0-9]+[\.a-z]*')
 special_token_regex = re.compile('^{{.*}}$')
+header_regex = re.compile('^{{[hH].*}}$')
 
-def write_output(document, tokens):
-    output_dir = os.path.dirname(document)
-    output_name = os.path.basename(document).split('.')[0] + '.tokens'
-    output_path = os.path.join(output_dir, output_name)
+def write_output(tokens, output_path):
     with open(output_path, 'w+') as f:
         lines = '\n'.join([' '.join(sent) for sent in tokens])
         f.write(lines)
@@ -86,23 +84,37 @@ def misc_processing(token):
     tokens = ['{{sym}}' if len(token) == 1 else token for token in tokens]
     return ' '.join(tokens)
 
+def preprocess(tokens):
+    tokens = [process_punctuation(sent) for sent in tokens]
+    tokens = [remove_stopwords(sent) for sent in tokens]
+    tokens = [stem(sent) for sent in tokens]
+    tokens = [replace_nums(sent) for sent in tokens]
+    tokens = [[misc_processing(token) for token in sent] for sent in tokens]
+    tokens = [[token for token in sent if token != None] for sent in tokens]
+    return tokens
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Preprocess cmp-lg abstract and article texts.')
     parser.add_argument('documents', type=glob.glob,
-            help='Glob pattern of documents to preprocess.')
+            help='Glob pattern of documents (directories) to preprocess.')
     args = parser.parse_args()
+    
+    for doc_dir in args.documents:
+        for doc_part in ['article', 'abstract']:
+            doc_txt = '{}/{}.txt'.format(doc_dir, doc_part)
+            with open(doc_txt, 'r') as f:
+                text = f.read()
 
-    for document in args.documents:
-        with open(document, 'r') as f:
-            text = f.read()
-        tokens = [word_tokenize(sent) for sent in sent_tokenize(text)]
-        tokens = [merge_special_tokens(sent) for sent in tokens]
-        tokens = [sent for sent in tokens if sent != ['.']]
-        tokens = [process_punctuation(sent) for sent in tokens]
-        tokens = [remove_stopwords(sent) for sent in tokens]
-        tokens = [stem(sent) for sent in tokens]
-        tokens = [replace_nums(sent) for sent in tokens]
-        tokens = [[misc_processing(token) for token in sent] for sent in tokens]
-        tokens = [[token for token in sent if token != None] for sent in tokens]
-        write_output(document, tokens)
+            tokens = [word_tokenize(sent) for sent in sent_tokenize(text)]
+            tokens = [merge_special_tokens(sent) for sent in tokens]
+            tokens = [sent for sent in tokens if len(sent) and sent[0] != '.']
+            tokens = [sent for sent in tokens if not header_regex.match(sent[0])]
+
+            sents_file = '{}/{}.sentences'.format(doc_dir, doc_part)
+            write_output(tokens, sents_file)
+
+            tokens = preprocess(tokens)
+            tokens_file = '{}/{}.tokens'.format(doc_dir, doc_part)
+            write_output(tokens, tokens_file)
+
 
