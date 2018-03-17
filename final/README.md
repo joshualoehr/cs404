@@ -8,6 +8,15 @@ pip install -r requirements.txt
 
 All following commands will assume this virtualenv is activate, and that the current directory is the project's top level directory, i.e., `final/`
 
+Preprocessing depends on the `punkt` and `stopwords` corpora from nltk. If not already downloaded, do so by entering the Python interpreter and running the following commands:
+```
+>>> import nltk
+>>> nltk.download()
+...
+Downloader> d punkt
+Downloader> d stopwords
+```
+
 Steps to download and prepare cmp-lg dataset:
 ```
 ./cmp-lg/bulk_download.sh

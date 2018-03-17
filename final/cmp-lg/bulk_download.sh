@@ -3,9 +3,9 @@
 # See: http://www-nlpir.nist.gov/related_projects/tipster_summac/cmp_lg.html
 
 if [[ $# -lt 1 ]]; then
-    DATADIR=$1
-else
     DATADIR=data
+else
+    DATADIR=$1
 fi
 
 curl -sL http://www-nlpir.nist.gov/related_projects/tipster_summac/cmplg-xml.tar.gz > cmplg-xml.tar.gz
