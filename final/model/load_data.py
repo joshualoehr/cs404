@@ -1,10 +1,23 @@
 """
-Load all label and feature files. Store labels from all labels and corresponding features
-from all documents in .npy array files. Additionally store abstracts and document identifiers
-if specified by the user.
+Load and save label files, feature files, document length values for each document as 
+.npy array files. Additionally store abstract length values, the raw document files, and
+the document directory names if the -save_abs argument is provided.
 
-python load_data.py --data "data/*_train/*" --set_name train --out_dir npy_data/train --sent_len 5 
-python load_data.py --data "data/*_test/*" --set_name test --out_dir npy_data/test/ --sent_len 5 -save_abs
+Output: 
+* features: load each article.feats and save as <setname>_feats.npy
+* labels: load each article.labels and save as <setname>_labels.npy
+* lengths: with the information from each label file, store the length of each document, 
+    and save as <setname>_lens.npy
+
+If -save_abs:
+* abstracts: load each abstract.sentences, store the length of each abstract, 
+    and save as <setname>_abs.npy
+* documents: load each article.sentences, store a list of the sentences in each document,  
+    and save as <setname>_docs.npy
+* names: save the unique document folder names as <setname>_names.npy    
+
+python load_data.py --data "data/*_train/*" --set train --out npy_data/train --len 5 
+python load_data.py --data "data/*_test/*" --set test --out npy_data/test/ --len 5 -save_abs
 
 """
 
@@ -17,98 +30,46 @@ def parseArgs():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", required=True, type=glob.glob, 
         help="List of paths to all files for a given set.")
-    parser.add_argument("--set_name", required=True, type=str,
-        help="Name of dataset to load (e.g. train).")
-    parser.add_argument("--out_dir",  required=True, type=str, 
+    parser.add_argument("--set", required=True, type=str,
+        help="Name of dataset to load [train, dev, or test].")
+    parser.add_argument("--out",  required=True, type=str, 
         help="Directory to write binary files to.")
-    parser.add_argument("--sent_len", required=True, type=int)
-    parser.add_argument("-save_abs", action='store_true')
- 
+    parser.add_argument("--len", required=True, type=int,
+        help="Maximum sentence length for the given set.")
+    parser.add_argument("-save_abs", action='store_true',
+        help="Store the abstracts, documents, and names.")
     return parser.parse_args()
 
-def getFiles(data):
-    label_files = sorted([l for l in data if ".labels" in l])
-    feat_files = sorted([f for f in data if ".feats" in f])
-    
-    document_names = [label_name.split("/")[1] for label_name in label_files]
-    return label_files, feat_files, document_names
-
-def getAbstractFiles(data): 
-    abs_files = sorted([a for a in data if ".abs" in a])
-    doc_files = sorted([d for d in data if ".sentences" in d])
-    return abs_files, doc_files
-
-def loadFeatures(feat_files, max_len):
-    all_feats = []
-    for f in feat_files:
-        with open(f, 'r') as feats:
-            all_lines = []
-            for line in feats:
-                line = line.strip().split()
-                curr_len = len(line)
-                line += ["0"]*(max_len-curr_len)
-                all_lines.append(line)
-        all_feats.append(np.array(all_lines))
-    return all_feats
-
-def loadLabels(l_files):
+def getFiles(data, file_name):
     """
-    For each label and feature pair, load as np array and store the length of the files.
-    Once max length is found, pad remaining files and return np arrays as well as lengths.
+    Extract files with the provided file_name from the data directory and return as a list.
     """
-    all_labels, all_lens= [], []
-    max_len = 0
-    for label in l_files:
-        curr_l = np.loadtxt(label)
-        all_labels.append(curr_l)
-        all_lens.append(curr_l.shape[0])
-    return all_labels, all_lens
+    return [f for f in data if file_name in f]
 
-def padFiles(all_labels, all_feats, max_len):
+def loadAbstracts(sorted_data):
     """
-    Given a maximum length, pad label and feature files with 0s.
-    Return a label and feature array. 
-    labels = number of documents x max length
-    feats = number of documents x max length x number of features
-    """
-    for i in range(len(all_labels)):
-        pad = max_len - len(all_labels[i])
-        all_labels[i] = np.concatenate((all_labels[i], np.zeros((pad))))
-        all_feats[i] = np.concatenate((all_feats[i], np.zeros((pad, all_feats[i].shape[1]))))
-    
-    labels = np.stack(all_labels)
-    feats = np.stack(all_feats)
-    return labels, feats
-
-
-def makeBinaries(outfile, labels, feats, all_lens):
-    """
-    Saves the label, feature, and length arrays provided as .npy files.
-    """
-    label_out = outfile + "_labels.npy"
-    feat_out = outfile + "_feats.npy"    
-    len_out = outfile + "_lens.npy"
-    np.save(label_out, labels)
-    np.save(feat_out, feats)
-    np.save(len_out, all_lens)    
-
-def loadAbstracts(a_files, d_files):
-    """
-    Store the contents of each abstract file as an element of a list.
+    Store the number of sentences (length) of each abstract file as an element of a list.
+    Store the extracted sentences from each document as an element of a list.
+    Return the abstract lengths, document sentences, and document names.
     """
     all_abs = []
     all_docs = []
-    for abstract in a_files:
+    
+    abs_files = getFiles(sorted_data, "abstract.sentences")
+    doc_files = getFiles(sorted_data, "article.sentences")
+    document_names = [doc_name.split("/")[1] for doc_name in doc_files]
+    
+    for abstract in abs_files:
         with open(abstract, 'r') as f:
             all_abs.append(len(f.readlines()))
-    for document in d_files:
+    for document in doc_files:
         with open(document, 'r') as f:
             all_docs += [[sentence.strip() for sentence in f]]
-    return all_abs, all_docs
+    return all_abs, all_docs, document_names
 
 def makeAbstractBinary(outfile, abstracts, documents, names):
     """
-    Save the abstract provided and corresponding document identifier as .npy files.
+    Save the abstract, document, and name lists as .npy binary files.
     """
     abs_out = outfile + "_abs.npy"
     doc_out = outfile + "_docs.npy"
@@ -117,24 +78,84 @@ def makeAbstractBinary(outfile, abstracts, documents, names):
     np.save(doc_out, documents)
     np.save(nam_out, names)
 
+def loadFeatures(sorted_data, max_feat_len):
+    """
+    For each line in each feature file, pad line to max length provided and append to a list. 
+    Return a list of lists (num documents x num sentences x max number of features)
+    """
+    feat_files = getFiles(sorted_data, "article.feats")
+    all_feats = []  # all documents
+    for f in feat_files:
+        with open(f, 'r') as feats:
+            all_lines = []  # lines for a given document
+            for line in feats:
+                line = line.strip().split()
+                curr_len = len(line)
+                line += ["0"]*(max_feat_len-curr_len)
+                all_lines.append(line)
+        all_feats.append(np.array(all_lines))
+    return all_feats
+
+def loadLabels(sorted_data):
+    """
+    For each label file, store as a numpy array and append the number of sentences to a list.
+    Return a list of numpy arrays (num documents x variable num sentences)
+    Return a list containing the number of sentences in each document (num documents)
+    """
+    label_files = getFiles(sorted_data, "article.labels")
+    all_labels, all_lens= [], []
+    max_len = 0
+    for label in label_files:
+        curr_l = np.loadtxt(label)
+        all_labels.append(curr_l)
+        all_lens.append(curr_l.shape[0])
+    return all_labels, all_lens
+
+def padFiles(all_feats, all_labels, max_sentence_len):
+    """
+    Given a maximum sentence length, pad label and feature files with 0s.
+    Return a label and feature array. 
+    labels = num documents x max num sentences
+    feats = num documents x max num sentences x max num features
+    """
+    for i in range(len(all_labels)):
+        pad = max_sentence_len - len(all_labels[i])
+        all_feats[i] = np.concatenate((all_feats[i], np.zeros((pad, all_feats[i].shape[1]))))
+        all_labels[i] = np.concatenate((all_labels[i], np.zeros((pad))))
+    
+    feats = np.stack(all_feats)
+    labels = np.stack(all_labels)
+    return feats, labels
+
+def makeBinaries(outfile, feats, labels, all_lens):
+    """
+    Save the label, feature, and document length arrays provided as .npy binary files.
+    """
+    feat_out = outfile + "_feats.npy"    
+    label_out = outfile + "_labels.npy"
+    len_out = outfile + "_lens.npy"
+    np.save(feat_out, feats)
+    np.save(label_out, labels)
+    np.save(len_out, all_lens)    
+
 def main():
     args = parseArgs()
-    out_dir = args.out_dir + "/" if args.out_dir[-1] != "/" else args.out_dir
-    outfile = out_dir + args.set_name 
+    out_dir = args.out + "/" + args.set if args.out[-1] != "/" else args.out + args.set
+    outfile = out_dir + "/" + args.set  
 
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
- 
-    label_files, feat_files, names = getFiles(args.data)
+
+    sorted_data = sorted(args.data)
+
     if args.save_abs:
-        abs_files, doc_files = getAbstractFiles(args.data)
-        abstracts, documents = loadAbstracts(abs_files, doc_files)
+        abstracts, documents, names = loadAbstracts(sorted_data)
         makeAbstractBinary(outfile, abstracts, documents, names)
-    all_labels, all_lens = loadLabels(label_files)
     
-    all_feats = loadFeatures(feat_files, args.sent_len)
-    labels, feats = padFiles(all_labels, all_feats, max(all_lens))
-    makeBinaries(outfile, labels, feats, all_lens)
+    all_feats = loadFeatures(sorted_data, args.len)
+    all_labels, all_lens = loadLabels(sorted_data)
+    feats, labels = padFiles(all_feats, all_labels, max(all_lens))
+    makeBinaries(outfile, feats, labels, all_lens)
     
 if __name__ == "__main__":
     main()
