@@ -7,5 +7,5 @@ if [[ $# -lt 1 ]]; then
     exit 0
 fi
 
-N=10000
+N=1000
 csvcut -c File oa_file_list.csv | tail -n +$((2 + $1 * $N)) | head -n$N | xargs -n1 -P8 -I {} ./download.sh {}

@@ -8,7 +8,12 @@ if [[ $# -lt 1 ]]; then
     exit 0
 fi
 
+DATADIR=$(dirname ${BASH_SOURCE[0]})/data
+if ! [[ -d $DATADIR ]]; then
+    mkdir $DATADIR
+fi
+
 TARGZ=$(echo $1 | sed "s/.*\///g")
-curl -sL ftp://ftp.ncbi.nlm.nih.gov/pub/pmc/$1 > data/$TARGZ
-tar -C data -xzf data/$TARGZ
-rm data/$TARGZ
+curl -sL ftp://ftp.ncbi.nlm.nih.gov/pub/pmc/$1 > $DATADIR/$TARGZ
+tar -C $DATADIR -xzf $DATADIR/$TARGZ
+rm $DATADIR/$TARGZ

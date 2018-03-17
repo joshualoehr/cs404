@@ -94,7 +94,7 @@ def preprocess(tokens):
     return tokens
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser('Preprocess cmp-lg abstract and article texts.')
+    parser = argparse.ArgumentParser('Preprocess medline abstract and article texts.')
     parser.add_argument('documents', type=glob.iglob,
             help='Glob pattern of documents (directories) to preprocess.')
     args = parser.parse_args()

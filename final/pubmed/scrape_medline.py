@@ -16,27 +16,27 @@ def scrape_text(nxml):
     root = ET.fromstring(data)
 
     abstract = root.find('./front/article-meta/abstract')
-    replace_text(abstract.findall('*/title'), lambda text: '{{%s}}' % text)
+    replace_text(abstract.findall('*/title'), lambda text: '{{H}}')
     abstract_text = ' '.join(list(abstract.itertext()))
     
     article  = root.find('./body')
-    replace_text(article.findall('*/title'), lambda text: '{{%s}}' % text)
+    replace_text(article.findall('*/title'), lambda text: '{{H}}')
     article_text = ' '.join(list(article.itertext()))
 
     return article_text, abstract_text
 
 def write_output(nxml, article, abstract):
     output_dir = os.path.dirname(nxml)
-    with open('{}/article.txt'.format(output_dir), 'w+') as f:
+    with open('{}/article.txt'.format(output_dir), 'bw+') as f:
         f.write(article.encode('utf-8'))
-    with open('{}/abstract.txt'.format(output_dir), 'w+') as f:
+    with open('{}/abstract.txt'.format(output_dir), 'bw+') as f:
         f.write(abstract.encode('utf-8'))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Scrape abstract and article text from MEDLINE .nxml files.')
-    parser.add_argument('files', type=glob.glob,
-            help='Glob pattern of files to scrape.')
+    parser.add_argument('files', type=glob.iglob,
+            help='Glob pattern of .nxml files scrape.')
     args = parser.parse_args()
 
     for nxml in args.files:
