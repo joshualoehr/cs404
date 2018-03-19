@@ -1,11 +1,12 @@
 """
-
-Adapted from code written by Brian Hutchinson.
+How to run (update with custom epoch number and hidden dimension L):
+python basic_rnn.py --data model_data --out system -ep 10 -L 10
 
 features == number of documents x maximum length x number of features
 labels   == number of documents x maximum length (scores for each sentence) 
 lens     == number of sentences contained in each document
 
+Adapted from code written by Brian Hutchinson.
 """
 
 import argparse
@@ -26,7 +27,6 @@ def parseArgs():
     parser.add_argument("-lr", type=float, default=0.001, help="The learning rate.")
     parser.add_argument("-L",  type=int,   default=100,   help="The hidden layer dimension.")
     parser.add_argument("-ep", type=int,   default=20,    help="The number of epochs to train for.")
-    parser.add_argument("-mb", type=int,   default=64,    help="The minibatch size.")
 
     return parser.parse_args()
 
@@ -78,34 +78,40 @@ def buildGraph(args, vocab_size, num_feats):
 
     # compute loss over all num_steps and all sequences in the minibatch
     losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y_true, logits=logits)
-    unnormalized_objective = tf.reduce_sum(losses * mask)
-    denominator = tf.reduce_sum(mask)
+    unnormalized_objective = tf.reduce_sum(losses * mask, name="perplexity")
+    denominator = tf.reduce_sum(mask, name="denom")
 
     # minimize average loss
     normalized_objective = unnormalized_objective / denominator
     train_step = tf.train.AdamOptimizer(args.lr).minimize(normalized_objective, name="train_step")
 
     # perplexity and accuracy
-    ppl = tf.exp(normalized_objective, name="perplexity")
+    #ppl = tf.exp(normalized_objective, name="perplexity")
     max_logits = tf.argmax(logits, axis=2, name="ls")
-    acc = tf.reduce_mean(tf.cast(tf.equal(y_true, max_logits), tf.float32), name="accuracy")
+    acc = tf.reduce_sum(tf.cast(tf.equal(y_true, max_logits), tf.float32), name="accuracy")
 
     init = tf.global_variables_initializer()
 
     return init
 
 def evaluateDev(args, features, labels, lens, sess):
+    ppl = 0.0
+    acc = 0.0
+    denominator = 0.0
     hidden_states = np.zeros(shape=(features.shape[0], args.L), dtype=np.float32)
     for row in range(features.shape[0]):    # row corresponds to document
         x = np.reshape(features[row,:,:], (1, features.shape[1], features.shape[2]))
         y_true = np.reshape(labels[row,:], (1, labels.shape[1]))
         h = np.reshape(hidden_states[row,:], (1, hidden_states.shape[1]))
-        ppl, acc = sess.run(fetches=["perplexity:0","accuracy:0"],
+        p, a, denom = sess.run(fetches=["perplexity:0","accuracy:0", "denom:0"],
                             feed_dict={"x:0":x,
                                        "y_true:0":y_true,
                                        "h0:0":h,
                                        "lens:0":([lens[row]])})
-        print("Dev ppl = %.5f acc = %.5f" % (ppl, acc))
+        ppl += p
+        acc += a
+        denominator += denom
+    print("Dev ppl = %.5f acc = %.5f" % (ppl/denominator, acc/denominator))
  
 def generateSummary(logits, abstract_len, document, doc_name, out_dir):
     out_dir = out_dir + "/" if out_dir[-1] != "/" else out_dir
@@ -114,11 +120,12 @@ def generateSummary(logits, abstract_len, document, doc_name, out_dir):
         os.makedirs(out_dir)
 
     out_file = out_dir + doc_name + ".txt"
-    logits = logits.flatten('C')
+    logits = logits[0][:len(document)]
+    
     indexed_logits = list(enumerate(logits))
     indexed_logits.sort(key=lambda logit: logit[1])
     sentence_indices = sorted([index for index, score in indexed_logits[:abstract_len]])
-    
+    print(sentence_indices)
     with open(out_file, 'w') as f:
         f.write("\n".join([document[i] for i in sentence_indices]))
 
@@ -128,12 +135,12 @@ def evaluateTest(args, features, labels, lens, abstracts, documents, document_na
         x = np.reshape(features[row,:,:], (1, features.shape[1], features.shape[2]))
         y_true = np.reshape(labels[row,:], (1, labels.shape[1]))
         h = np.reshape(hidden_states[row,:], (1, hidden_states.shape[1]))
-        ppl, acc, logits = sess.run(fetches=["perplexity:0","accuracy:0", "ls:0"],
+        p, a, denom, logits = sess.run(fetches=["perplexity:0","accuracy:0", "denom:0", "ls:0"],
                             feed_dict={"x:0":x,
                                        "y_true:0":y_true,
                                        "h0:0":h,
                                        "lens:0":([lens[row]])})
-        print("%s: ppl = %.5f acc = %.5f" % (document_names[row], ppl, acc))
+        print("%s: ppl = %.5f acc = %.5f" % (document_names[row].split("_")[0], p/denom, a/denom), end=" ")
         generateSummary(logits, abstracts[row], documents[row], document_names[row], args.out)
 
 def main():
@@ -175,11 +182,14 @@ def main():
                                     "h0:0":mb_h0,
                                     "lens:0":(mb_lens)})
 
-                if(mb_row % 100 == 0):
-                    print("%d... " % (mb_row),end='',flush=True)
-            print("training loop finished.")
+            print("training loop finished.", end=" ")
     
-            evaluate(args, dev_feats, dev_labels, dev_lens, sess)
+            if(epoch % 1 == 0):
+                evaluateDev(args, dev_feats, dev_labels, dev_lens, sess)
+            else:
+                print()
+
+        print()
         evaluateTest(args, test_feats, test_labels, test_lens, test_abs, test_docs, test_names, sess)          
 
 if __name__ == "__main__":
