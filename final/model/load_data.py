@@ -16,8 +16,11 @@ If -save_abs:
     and save as <setname>_docs.npy
 * names: save the unique document folder names as <setname>_names.npy    
 
-python load_data.py --data "data/*_train/*" --set train --out npy_data/train --len 5 
-python load_data.py --data "data/*_test/*" --set test --out npy_data/test/ --len 5 -save_abs
+
+How to run (replace dlen and slen depending on makeup of data directory):
+python load_data.py --data "data/*_train/*" --set train --out model_data --dlen 365 --slen 97
+python load_data.py --data "data/*_dev/*" --set dev --out model_data --dlen 365 --slen 97
+python load_data.py --data "data/*_test/*" --set test --out model_data --dlen 365 --slen 97
 
 """
 
@@ -34,8 +37,10 @@ def parseArgs():
         help="Name of dataset to load [train, dev, or test].")
     parser.add_argument("--out",  required=True, type=str, 
         help="Directory to write binary files to.")
-    parser.add_argument("--len", required=True, type=int,
+    parser.add_argument("--slen", required=True, type=int,
         help="Maximum sentence length for the given set.")
+    parser.add_argument("--dlen", required=True, type=int,
+        help="Maximum document length for the given set.")
     parser.add_argument("-save_abs", action='store_true',
         help="Store the abstracts, documents, and names.")
     return parser.parse_args()
@@ -65,7 +70,8 @@ def loadAbstracts(sorted_data):
     for document in doc_files:
         with open(document, 'r') as f:
             all_docs += [[sentence.strip() for sentence in f]]
-    return all_abs, all_docs, document_names
+    names = np.asarray(document_names, dtype=str)
+    return all_abs, all_docs, names
 
 def makeAbstractBinary(outfile, abstracts, documents, names):
     """
@@ -83,7 +89,7 @@ def loadFeatures(sorted_data, max_feat_len):
     For each line in each feature file, pad line to max length provided and append to a list. 
     Return a list of lists (num documents x num sentences x max number of features)
     """
-    feat_files = getFiles(sorted_data, "article.feats")
+    feat_files = getFiles(sorted_data, "article.features")
     all_feats = []  # all documents
     for f in feat_files:
         with open(f, 'r') as feats:
@@ -91,9 +97,10 @@ def loadFeatures(sorted_data, max_feat_len):
             for line in feats:
                 line = line.strip().split()
                 curr_len = len(line)
-                line += ["0"]*(max_feat_len-curr_len)
+                line += ['0']*(max_feat_len-curr_len)
+                line = np.array(line, dtype=np.int32)
                 all_lines.append(line)
-        all_feats.append(np.array(all_lines))
+            all_feats.append(np.array(all_lines))
     return all_feats
 
 def loadLabels(sorted_data):
@@ -104,22 +111,21 @@ def loadLabels(sorted_data):
     """
     label_files = getFiles(sorted_data, "article.labels")
     all_labels, all_lens= [], []
-    max_len = 0
     for label in label_files:
         curr_l = np.loadtxt(label)
         all_labels.append(curr_l)
         all_lens.append(curr_l.shape[0])
     return all_labels, all_lens
 
-def padFiles(all_feats, all_labels, max_sentence_len):
+def padFiles(all_feats, all_labels, max_len):
     """
-    Given a maximum sentence length, pad label and feature files with 0s.
+    Given a maximum document length, pad label and feature files with 0s.
     Return a label and feature array. 
     labels = num documents x max num sentences
     feats = num documents x max num sentences x max num features
     """
     for i in range(len(all_labels)):
-        pad = max_sentence_len - len(all_labels[i])
+        pad = max_len - len(all_labels[i])
         all_feats[i] = np.concatenate((all_feats[i], np.zeros((pad, all_feats[i].shape[1]))))
         all_labels[i] = np.concatenate((all_labels[i], np.zeros((pad))))
     
@@ -152,9 +158,9 @@ def main():
         abstracts, documents, names = loadAbstracts(sorted_data)
         makeAbstractBinary(outfile, abstracts, documents, names)
     
-    all_feats = loadFeatures(sorted_data, args.len)
+    all_feats = loadFeatures(sorted_data, args.slen)
     all_labels, all_lens = loadLabels(sorted_data)
-    feats, labels = padFiles(all_feats, all_labels, max(all_lens))
+    feats, labels = padFiles(all_feats, all_labels, args.dlen)
     makeBinaries(outfile, feats, labels, all_lens)
     
 if __name__ == "__main__":
