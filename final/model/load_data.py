@@ -20,7 +20,7 @@ If -save_abs:
 How to run (replace dlen and slen depending on makeup of data directory):
 python load_data.py --data "data/*_train/*" --set train --out model_data --dlen 365 --slen 97
 python load_data.py --data "data/*_dev/*" --set dev --out model_data --dlen 365 --slen 97
-python load_data.py --data "data/*_test/*" --set test --out model_data --dlen 365 --slen 97
+python load_data.py --data "data/*_test/*" --set test --out model_data --dlen 365 --slen 97 -save_abs
 
 """
 
