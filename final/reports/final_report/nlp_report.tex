@@ -1,0 +1,63 @@
+\documentclass[11pt]{article}
+\usepackage{acl2015}
+\usepackage{times}
+\usepackage{url}
+\usepackage{latexsym}
+
+\hyphenation{op-tical net-works semi-conduc-tor}
+
+\begin{document}
+
+\title{Automatic Summarization of Scientific Journals}
+
+\author{Robin Cosbey \\
+  {\tt cosbeyr@wwu.edu} \\\And
+  Josh Loehr \\
+  {\tt loehrj@wwu.edu} \\}
+
+\maketitle
+
+\begin{abstract}
+  We propose the summarization of scientific journals by way of machine learning methods.
+\end{abstract}
+
+\section{Introduction}
+	Text summarization is a useful process that involves creating a shorter, more concise representation of a larger text or texts. Given that there is a large number of textual documents available for any number of subject matters, having access to summaries of each document can be helpful when searching for relevant information to a task. As the number of relevant scientific papers continues to grow, researchers are required to complete a large amount of literature review and the importance of automatic text summarization becomes even more relevant. Having a model that can produce a summary of a paper’s contributions would make the literature review process more efficient and increase a researcher’s ability to understand the scope of their project early on. 
+
+	Automatic summarization of text consists of two main subtasks: abstraction, in which a model produces newly generated sentences summarizing the text provided and extraction, in which a model extracts the sentences that have been deemed most important to build a sentence. Given the time constraints of this project, we have opted for the latter method. The input provided to automatic summarization models can either be in the form of multiple, related documents or single documents. Given the availability of data, we have opted to produce summaries based on single documents. Our goal is to produce a summary containing the most important sentences of a scientific paper that is of comparable quality to the corresponding document abstracts. 
+	We have approached this by way of supervised machine learning methods in which we supply a model with extracted document features as well as true labels corresponding to the importance of each sentence and train the model to map from the features to the labels.
+
+\section{Related Work}
+	A Survey on Automatic Text Summarization \cite{das2017}.
+
+\section{Data} % data description
+	One of the largest challenges we faced was finding a dataset suitable to our task. Although there is a large amount of text available online from a variety of sources, most is not in a form suitable to autosummarization models and does not include an abstract that we can compare our model's results with. After much research, we decided to proceed with two main datasets. Although neither dataset had a true extraction-based summary for us to provide the model with during training, all documents in each corpus contained a human-generated abstract.
+
+The first dataset is MEDLINE which conatins biomedical literature articles in xml format. \url{https://www.nlm.nih.gov/bsd/pmresources.html#}
+
+The second dataset we found is the TIPSTER SUMMAC corpus which contains 183 documents from the Computation and Language collection and each document is in xml format. All the documents are scientific papers from Association for Computational Linguistics (ACL) sponsored conferences. Although this dataset was smaller than the former, the xml was much easier to parse. \url{https://www-nlpir.nist.gov/related_projects/tipster_summac/cmp_lg.html}
+ 
+
+\section{Approach}
+	\subsection{Preprocessing} % describe feature set
+		Given the .csv representations of the journal files in our corpuses, document files containing one sentence per line have been generated. The main body of each journal was kept and all other sections were removed (e.g. Acknowledgements, References, Citations, Appendices). We have also replaced headings, numbers, and references with single tokens. Additional processing has included the removal of stop words and stemming. Similar processing was completed with the abstracts corresponding to each journal. With this information, TF-IDF scores have been produced for each sentence as well as each sentence in the abstracts. Each label is the comparison of the journal sentences with each abstract sentence by way of cosine similarity. We plan to supply several features to our model including the sentence representations, the heading the sentence is within, and sentence length.
+	\subsection{Model Architecture} % describe algorithm used
+		Functionality for a data loader and RNN model have been implemented. The data loader takes in the label and feature files to produce numpy arrays ready to be fed into the model as well as representations of the document files for evaluation purposes and a file containing the number of sentences in each document for use by the model. The RNN model creates the graph with the provided file dimensions and trains the model. After training has been completed, the trained model is run with the test data set and extracted summaries are produced and stored.
+	\subsection{Experiment Setup} 
+		How we split up the data
+		Train, Dev, and Test
+		\subsubsection{Evaluation Metrics}
+			Manually looking at the produced summaries in relation to abstracts
+			Rouge \cite{ganesan2015}
+\section{Results and Analysis} % present a table of results
+% Your need to discuss the results and provide critical analysis of your work (Such as: Have you thought about ways to improve the model? Howdo you think the model accuracy? etc.) 
+	We will need to include a table of results.
+\section{Conclusion}
+	We propose the summarization of scientific journals by way of machine learning methods \cite{ganesan2015}
+
+\bibliographystyle{acl}
+\bibliography{nlp_bib}
+
+\end{document}
+
+
