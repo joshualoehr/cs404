@@ -18,6 +18,7 @@ if __name__ == '__main__':
             doc_tokens = '{}/{}.tokens'.format(doc_dir, doc_part)
             with open(doc_tokens, 'r') as f:
                 sents = f.read().split('\n')
+                sents = list(filter(lambda sent: sent != '{{hed}}', sents))
             doc_sents['{}/{}'.format(doc_dir, doc_part)] = sents
 
     tfidf = TfidfVectorizer()
@@ -25,7 +26,11 @@ if __name__ == '__main__':
 
     feature_names = tfidf.get_feature_names()
     for doc,sents in doc_sents.items():
-        scores = tfidf.transform(sents)
+        try:
+            scores = tfidf.transform(sents)
+        except ValueError:
+            print(list(sents))
+            exit(0)
 
         doc_tfidf = '{}.tfidf'.format(doc)
         with open(doc_tfidf, 'w+') as f:
