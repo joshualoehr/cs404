@@ -1,11 +1,8 @@
-#!/bin/env python
-
 import argparse
 import glob
 import os
 import string
 import re
-from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.corpus import stopwords
 from nltk.stem.snowball import SnowballStemmer
 
@@ -20,78 +17,48 @@ punctuation.append("''")
 stop_words = set(stopwords.words('english'))
 stemmer = SnowballStemmer('english')
 
-roman_numeral_regex = re.compile('[0-9\.]*[ivx]+')
-ordering_regex = re.compile('[0-9]+[\.a-z]*')
-special_token_regex = re.compile('^{{.*}}$')
-header_regex = re.compile('^{{[hH].*}}$')
-
-def write_output(tokens, output_path):
+def write_output(sents, output_path, headers=True):
+    if not headers:
+        sents = filter(lambda sent: sent != '{{HED}}', sents)
+    sents = (sent.strip() for sent in sents)
     with open(output_path, 'w+') as f:
-        lines = '\n'.join([' '.join(sent) for sent in tokens])
+        lines = '\n'.join(sents)
         f.write(lines)
 
-def merge_special_tokens(tokens):
-    new_tokens = []
-    special_token = ''
-    in_special = False
-    for token in tokens:
-        if not in_special and token == '{':
-            in_special = True
-        if not in_special:
-            new_tokens.append(token)
+def remove_stopwords(sent):
+    return (token for token in sent if token not in stop_words)
 
-        if in_special:
-            special_token += token
-            if special_token[-2:] == '}}':
-                new_tokens.append(special_token)
-                in_special = False
-                special_token = ''
-    return new_tokens
-            
-def process_punctuation(tokens):
-    return [token for token in tokens if token not in punctuation]
+def remove_braces(sent):
+    for token in sent:
+        if re.match('^({{.{3}}})$', token):
+            yield token
+        else: 
+            yield token.replace('}','').replace('{','')
 
-def remove_stopwords(tokens):
-    return [token for token in tokens if token not in stop_words]
+def replace_numerics(sent):
+    for token in sent:
+        if re.match('^([0-9]+|[0-9\.]*[iv]+|[0-9]+[\.a-z]*)$', token):
+            yield '{{NUM}}'
+        else:
+            yield token
 
-def stem(tokens):
-    return [stemmer.stem(token) for token in tokens]
+def replace_symbols(sent):
+    for i,token in enumerate(sent):
+        if i == 0 and token == 'A':
+            yield token
+        elif len(token) == 1:
+            yield '{{SYM}}'
+        elif re.match('^[A-Z]+$', token):
+            yield '{{ACR}}'
+        elif re.match('^[A-Z0-9]+$', token):
+            yield '{{SYM}}'
+        elif re.match('^[A-Za-z][0-9ijk]+$', token):
+            yield '{{SYM}}'
+        else:
+            yield token
 
-def is_numeric(token):
-    if token.isdigit():
-        return True
-    if roman_numeral_regex.match(token):
-        return True
-    if ordering_regex.match(token):
-        return True
-    return False
-
-def replace_nums(tokens):
-    return ['{{num}}' if is_numeric(token) else token for token in tokens]
-
-def misc_processing(token):
-    if special_token_regex.match(token):
-        return token
-    if token == "'s":
-        return None
-    token = token.replace('/', ' ')
-    token = token.replace('-', ' ')
-    token = token.replace('_', ' ')
-    token = token.replace('.', '')
-    token = token.replace('`', '')
-    tokens = token.split(' ')
-    tokens = [token.strip() for token in tokens]
-    tokens = ['{{sym}}' if len(token) == 1 else token for token in tokens]
-    return ' '.join(tokens)
-
-def preprocess(tokens):
-    tokens = [process_punctuation(sent) for sent in tokens]
-    tokens = [remove_stopwords(sent) for sent in tokens]
-    tokens = [stem(sent) for sent in tokens]
-    tokens = [replace_nums(sent) for sent in tokens]
-    tokens = [[misc_processing(token) for token in sent] for sent in tokens]
-    tokens = [[token for token in sent if token != None] for sent in tokens]
-    return tokens
+def stem(sent):
+    return (stemmer.stem(token) for token in sent)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Preprocess cmp-lg abstract and article texts.')
@@ -105,16 +72,28 @@ if __name__ == '__main__':
             with open(doc_txt, 'r') as f:
                 text = f.read()
 
-            tokens = [word_tokenize(sent) for sent in sent_tokenize(text)]
-            tokens = [merge_special_tokens(sent) for sent in tokens]
-            tokens = [sent for sent in tokens if len(sent) and sent[0] != '.']
-            tokens = [sent for sent in tokens if not header_regex.match(sent[0])]
-
+            for c in set(punctuation) - {'.'}:
+                text = text.replace(c, ' ')
+            text = text.replace('e.g.', 'eg')
+            text = text.replace('i.e.', 'ie')
+            text = re.sub(r'[a-z]+\{.*?\}', ' ', text)
+            text = re.sub(r'\{\{EQN\}\} (?=[A-Z][a-z]|{{HED}})', '{{EQN}}. ', text)
+            text = re.sub(r'(\s+(?!{{HED}}).*?)\s+({{HED}})', '\g<1>. {{HED}}', text)
+            sents = re.split('({{EQN}}|\.)\s+({{HED}}|[A-Z][A-Za-z\s{}0-9]+)', text)
+            sents = [re.sub('\s+', ' ', sent) for sent in sents if len(sent) and sent[0] != '.']
+            
             sents_file = '{}/{}.sentences'.format(doc_dir, doc_part)
-            write_output(tokens, sents_file)
+            write_output(sents, sents_file, headers=False)
 
-            tokens = preprocess(tokens)
+            sents = ((sent.split(' ')) for sent in sents)
+            sents = (remove_stopwords(sent) for sent in sents)
+            sents = (remove_braces(sent) for sent in sents)
+            sents = (replace_numerics(sent) for sent in sents)
+            sents = (replace_symbols(sent) for sent in sents)
+            sents = (stem(sent) for sent in sents)
+            sents = (' '.join(sent) for sent in sents)
+            
             tokens_file = '{}/{}.tokens'.format(doc_dir, doc_part)
-            write_output(tokens, tokens_file)
+            write_output(sents, tokens_file)
 
 

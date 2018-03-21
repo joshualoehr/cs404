@@ -32,7 +32,7 @@ def scrape_text(xml):
     
     article  = root.find('BODY')
     remove_references_section(article, parent_map)
-    replace_text(article.findall('.//HEADER'), lambda node: '. {{H%s}}.' % parent_map[node].get('ID'))
+    replace_text(article.findall('.//HEADER'), lambda node: ' {{HED}}.')
     replace_text(article.findall('.//REF'), lambda node: '{{REF}}')
     replace_text(article.findall('.//CREF'), lambda node: '{{REF}}')
     replace_text(article.findall('.//EQN'), lambda node: '{{EQN}}')

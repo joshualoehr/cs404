@@ -16,11 +16,11 @@ def scrape_text(nxml):
     root = ET.fromstring(data)
 
     abstract = root.find('./front/article-meta/abstract')
-    replace_text(abstract.findall('*/title'), lambda text: '{{H}}')
+    replace_text(abstract.findall('*/title'), lambda text: '{{HED}}')
     abstract_text = ' '.join(list(abstract.itertext()))
     
     article  = root.find('./body')
-    replace_text(article.findall('*/title'), lambda text: '{{H}}')
+    replace_text(article.findall('*/title'), lambda text: '{{HED}}')
     article_text = ' '.join(list(article.itertext()))
 
     return article_text, abstract_text
