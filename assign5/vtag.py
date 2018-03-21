@@ -1,3 +1,22 @@
+###################################################################################
+# CSCI 404 - Assignment 5 - Josh Loehr & Robin Cosbey - vtag.py                   #            #                                                                                 #
+#                                                                                 #   
+# usage: Viterbi POS Decoder [-h] [--smoothing {addone,onecount}] train test raw  #
+#                                                                                 #
+# positional arguments:                                                           #
+#   train                 The tagged training data, with a single word/tag pair   #
+#                         per line.                                               #
+#   test                  The tagged testing data, with a single word/tag pair    #
+#                         per line.                                               #
+#   raw                   The raw untagged data, with a single word per line.     #
+#                                                                                 #
+# optional arguments:                                                             #
+#   -h, --help            show this help message and exit                         #
+#   --smoothing {addone,onecount}                                                 #
+#                                                                                 #
+#                                                                                 #
+###################################################################################
+
 #!/bin/env python
 
 import argparse

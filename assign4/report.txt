@@ -1,0 +1,88 @@
+###############################################################################
+# CSCI 404 - Assignment 4 - Josh Loehr & Robin Cosbey - report.txt            #
+###############################################################################
+
+* naive_bayes.py
+Load train and test spam/nonspam documents and compute the counts of the most commmon words.
+
+NaiveBayesClassifier
+    - Store the counts of the words in each document for spam and non spam train documents.
+    - Use these counts to compute probabilities of the words in the documents as well 
+    as the prior probabilities. 
+    - Use these calculations to classify a provided new document as per Naive Bayes Model:
+        argmax[ P(x1, x2, ... xN | c) P(c)  ]
+
+* eval.py
+Load the model as created by naive_bayes.py, classify all test documents, and compute
+true positive, true negative, false positive, and false negative values.
+
+Display the 2x2 table reporting the true/fase positive/negative values as well as the 
+precision, recall, and f-score.
+
+RESULTS:
+
+Script started on Fri 16 Feb 2018 03:33:37 PM PST
+(venv) ]0;loehrj@cf420-16: ~/cs404/assign4loehrj@cf420-16:~/cs404/assign4$ for i in 700 50 100 400; do python eval.py --model model$i.pkl -p  data/test/spam -n data/test/nonspam --name "Naive Bayes Classifier w/ $i Training Samples"; done
+
+Evaluation of Naive Bayes Classifier w/ 700 Training Samples:
+       
+        True    False
+    +--------+--------+
+Pos |  128   |   4    |
+    +--------+--------+
+Neg |  126   |   2    |
+    +--------+--------+
+
+Precision: 0.970
+Recall:    0.985
+F-Score:   97.710%
+
+
+
+Evaluation of Naive Bayes Classifier w/ 50 Training Samples:
+
+       True    False 
+    +--------+--------+
+Pos |  127   |   8    |
+    +--------+--------+
+Neg |  122   |   3    |
+    +--------+--------+
+
+Precision: 0.941
+Recall:    0.977
+F-Score:   95.849%
+
+
+Evaluation of Naive Bayes Classifier w/ 100 Training Samples:
+
+       True    False 
+    +--------+--------+
+Pos |  127   |   8    |
+    +--------+--------+
+Neg |  122   |   3    |
+    +--------+--------+
+
+Precision: 0.941
+Recall:    0.977
+F-Score:   95.849%
+
+
+Evaluation of Naive Bayes Classifier w/ 400 Training Samples:
+
+       True    False 
+    +--------+--------+
+Pos |  128   |   2    |
+    +--------+--------+
+Neg |  128   |   2    |
+    +--------+--------+
+
+Precision: 0.985
+Recall:    0.985
+F-Score:   98.462%
+
+
+
+(venv) ]0;loehrj@cf420-16: ~/cs404/assign4loehrj@cf420-16:~/cs404/assign4$ exit
+exit
+
+Script done on Fri 16 Feb 2018 03:33:55 PM PST

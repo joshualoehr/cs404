@@ -1,0 +1,59 @@
+################################################################################
+# CSCI 404 - Assignment 5 - Josh Loehr & Robin Cosbey - report.txt             #
+################################################################################
+
+METHODS
+
+    txtfile()  - reads in a provided data file and truncates the extraneous ###/### pair
+                 returns a list of tupels in the form (word, tag) 
+    
+    Viterbi()  - class that computes tag-to-tag transition and tag-to-word emission
+                 probabilities. For add-one smoothing, we calculate these probabilities
+                 as we have previously.
+                 For one-count smoothing, we compute ptt-backoff, ptw-backoff, singtt,
+                 and singtw. We use these values to compute the correct lambda value
+                 for the given word/tag or tag/tag pair and gain our probabilities as
+                 described in the provided one-count smoothing file. 
+
+    decode()   - dynamically compute the viterbi algorithm for each possible tag in
+                 each position of the provided test sequence. A tag dictionary for
+                 a given word contains all the tags that have been associated with
+                 that word in the train file. If the word has never been seen, the
+                 tag dictionary contains all tags (except for the ###). Each cell
+                 in the viterbi table contains the viterbi value for that word/tag
+                 and the previous tag that gave us the best previous viterbi value.
+                 After the table of viterbi values has been calculated, start at 
+                 the end of the table and move backwards collecting the most
+                 probable tag sequence.
+    
+    evaluate() - given the provided test sentence sequence and the model generated
+                 sentence sequence, compute the overall, known, and novel accuracies.
+RESULTS
+
+    * How much did your tagger improve on the accuracy of the baseline tagger?
+    Baseline: 92.48% (known: 95.99% novel: 56.07%)
+    Our Results: 94.14% (known: 96.86% novel: 65.89%)
+    
+    - Overall accuracy improved by 1.66%, known accuracy improved by 0.87% and
+      novel accuracy improved by 9.82%. These results are consistent with the
+      one-count smoothing algorithm; given that the en dataset contains a large
+      number of singletons, introducing a larger lambda in those contexts helps
+      our accuracy on novel words greatly.
+    - When comparing add-one smoothing with one-count, we see a considerable increase 
+      in all three accuracies: overall accuracy improved by 5.39%, known improved by 
+      0.19% and novel improved by 59.15%. 
+
+PROGRAM EXECUTION & OUTPUT (on en dataset with add-one and one-count smoothing)
+
+    Script started on Tue 27 Feb 2018 06:23:45 PM PST
+    cosbeyr@cf420-36:~/$ python3 vtag.py data/en/entrain.txt data/en/entest.txt 
+    data/en/raw.txt --smoothing addone
+    
+    Tagging accuracy (Viterbi decoding): 88.75% (known: 96.67% novel: 6.74%)
+    
+    cosbeyr@cf420-36:~/$ python3 vtag.py data/en/entrain.txt data/en/entest.txt 
+    data/en/enraw.txt --smoothing oneecount
+    
+    Tagging accuracy (Viterbi decoding): 94.14% (known: 96.86% novel: 65.89%)
+    
+    Script done on Tue 27 Feb 2018 06:28:09 PM PST
