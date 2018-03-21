@@ -18,42 +18,47 @@
 \maketitle
 
 \begin{abstract}
-  We propose the summarization of scientific journals by way of machine learning methods.
+  Having the ability to represent a large body of work in less text is incredibly useful. We propose the summarization of scientific journals by way of machine learning methods in which a trained model extracts the most relevant sentences from a document. 
 \end{abstract}
 
 \section{Introduction}
-	Text summarization is a useful process that involves creating a shorter, more concise representation of a larger text or texts. Given that there is a large number of textual documents available for any number of subject matters, having access to summaries of each document can be helpful when searching for relevant information to a task. As the number of relevant scientific papers continues to grow, researchers are required to complete a large amount of literature review and the importance of automatic text summarization becomes even more relevant. Having a model that can produce a summary of a paper’s contributions would make the literature review process more efficient and increase a researcher’s ability to understand the scope of their project early on. 
+	Text summarization is a useful process that involves creating a shorter, more concise representation of a larger text or texts. As the number of textual documents available for any number of subject matters continues to grow, having access to summaries of each document can be helpful when searching for relevant information to a task. As the number of relevant scientific papers continues to grow, researchers are required to complete a large amount of literature review and the automatic text summarization becomes even more relevant. Having a model that can produce a summary of a paper’s contributions would make the literature review process more efficient and increase a researcher’s ability to understand the scope of their project early on. 
 
-	Automatic summarization of text consists of two main subtasks: abstraction, in which a model produces newly generated sentences summarizing the text provided and extraction, in which a model extracts the sentences that have been deemed most important to build a sentence. Given the time constraints of this project, we have opted for the latter method. The input provided to automatic summarization models can either be in the form of multiple, related documents or single documents. Given the availability of data, we have opted to produce summaries based on single documents. Our goal is to produce a summary containing the most important sentences of a scientific paper that is of comparable quality to the corresponding document abstracts. 
-	We have approached this by way of supervised machine learning methods in which we supply a model with extracted document features as well as true labels corresponding to the importance of each sentence and train the model to map from the features to the labels.
-
+	Automatic summarization of text consists of two main subtasks: abstraction, in which a model produces newly generated sentences summarizing the text provided and extraction, in which a model extracts sentences that it has deemed most important to build a sentence. Given the time constraints of this project, we have opted for the latter method. The input provided to automatic summarization models can either be in the form of multiple, related documents or single documents. We have decided to pursue single document summarization based on the type of data available to us and the scope of the specific problem we are attempting to solve. Our goal is to produce a summary containing the most important sentences of a scientific paper that is of comparable quality to the corresponding document abstracts. 
+	
 \section{Related Work}
-	A Survey on Automatic Text Summarization \cite{das2017}.
+	 
 
 \section{Data} % data description
-	One of the largest challenges we faced was finding a dataset suitable to our task. Although there is a large amount of text available online from a variety of sources, most is not in a form suitable to autosummarization models and does not include an abstract that we can compare our model's results with. After much research, we decided to proceed with two main datasets. Although neither dataset had a true extraction-based summary for us to provide the model with during training, all documents in each corpus contained a human-generated abstract.
-
-The first dataset is MEDLINE which conatins biomedical literature articles in xml format. \url{https://www.nlm.nih.gov/bsd/pmresources.html#}
-
-The second dataset we found is the TIPSTER SUMMAC corpus which contains 183 documents from the Computation and Language collection and each document is in xml format. All the documents are scientific papers from Association for Computational Linguistics (ACL) sponsored conferences. Although this dataset was smaller than the former, the xml was much easier to parse. \url{https://www-nlpir.nist.gov/related_projects/tipster_summac/cmp_lg.html}
- 
+	One of the largest challenges we faced was finding a dataset suitable to our task. Although there is a large amount of text available online from a variety of sources, most is not in a form suitable to autosummarization models without rigorous preprocessing and most do not include true summarizations or human-written abstracts. Since our task is supervised, having a source to create true labels for our model to learn from was necessary. After much research, we decided to proceed with two main datasets. Although neither dataset had a true extraction-based summary for us to provide the model with during training, all documents in each corpus contained an abstract. 
+	
+	The primary dataset we have been working with is Computation and Language corpus, referred to as cmp-lg. This dataset contains 183 documents all of which are scientific papers from Association for Computational Linguistics sponsored conferences. 
+	
+	We also worked with the MEDLINE/PubMed corpus which consists of biomedical literature articles. The entire corpus contains about 1.8 million documents.
 
 \section{Approach}
 	\subsection{Preprocessing} % describe feature set
 		Given the .csv representations of the journal files in our corpuses, document files containing one sentence per line have been generated. The main body of each journal was kept and all other sections were removed (e.g. Acknowledgements, References, Citations, Appendices). We have also replaced headings, numbers, and references with single tokens. Additional processing has included the removal of stop words and stemming. Similar processing was completed with the abstracts corresponding to each journal. With this information, TF-IDF scores have been produced for each sentence as well as each sentence in the abstracts. Each label is the comparison of the journal sentences with each abstract sentence by way of cosine similarity. We plan to supply several features to our model including the sentence representations, the heading the sentence is within, and sentence length.
-	\subsection{Model Architecture} % describe algorithm used
-		Functionality for a data loader and RNN model have been implemented. The data loader takes in the label and feature files to produce numpy arrays ready to be fed into the model as well as representations of the document files for evaluation purposes and a file containing the number of sentences in each document for use by the model. The RNN model creates the graph with the provided file dimensions and trains the model. After training has been completed, the trained model is run with the test data set and extracted summaries are produced and stored.
+	
+	\subsection{Feature Creation}	
+	Given sentences of the document, feature files are produced. We decided to use the words of each sentence as features. To accomplish this, each word was converted to an integer representation. We create a set of features for each sentence in a document, separated by lines in the feature file. The scientific papers in our dataset contain headings separating paper sections. We decided to include the heading as an additional feature in integer form. Each line of each feature file is padded with zeros to the maximum number of features in all the documents. Each feature file is also padded with zeros to the maximum number of sentences all the documents. The features, labels, and other meta information is saved as NumPy binary files for efficient loading.
+	
+	\subsection{Model Architecture} 
+		We have approached this task by way of supervised machine learning methods. The model, in our case a recurrent neural network (RNN), is supplied with extracted document features as well as the true labels corresponding to the score each sentence received. We chose to work with a recurrent neural network because of the sequential nature of sentences within a document and we feed in one document at a time. The TensorFlow machine learning framework is utilized to build the RNN architecture and the model is trained to map from the features to the labels. Two types of RNN cells have been explored: basic RNN cells and Gated Recurrent Unit (GRU) cells. RNNs are excellent at modeling temporal dependencies in data. In basic terms, at each timestep, the RNN gives the current sentence a predicted score based on the sentence's features as well as information from previous timesteps. GRUs are a simple variant of the basic RNN that supply longer time dependent information; with this task, it is likely that we will want our model to remember specific information from the Introduction section. We provide a hidden layer size and our hidden layer weights and bias vectors are the product of the glorot uniform initializer. At each timestep, we compute an output matrix by matrix multiplying our feature matrix by the hidden layer weights and adding the bias vector. 
+	\subsection{Summary Generation}
+	The output matrix produced by the model contains the predicted scores that the model has assigned to the sentences in a document. We take the maximum model generated scores contained in this output matrix for each sentence. The n-highest scores and their corresonding line numbers are extracted. In our case, n is set to equal the number of sentences in the abstract. Then, the line numbers are sorted from least to greatest; we chose to preserve order from the original document. The sentences at these line numbers are stored in a summary file.
+			
 	\subsection{Experiment Setup} 
-		How we split up the data
-		Train, Dev, and Test
-		\subsubsection{Evaluation Metrics}
-			Manually looking at the produced summaries in relation to abstracts
-			Rouge \cite{ganesan2015}
+		We chose to use a standard 80\% train, 10\% development, and 10\% test split of the cmp-lg data. The document length (number of sentences) as well as the sentence length (number of words) varied wildly so we removed the outliers for a more uniform dataset to train on. Of the 183 documents within this set, we used about 170 documents.
+		The RNN learns the mappings with the train set features and labels. After each epoch of training, the development set features and labels are supplied. After all training has been completed, we feed the test set features to the model and extract the model-generated scores for the sentences in each document to produce the summaries containing the highest scoring sentences from the original document. We chose to display them in the order that they appear in the document. Hyperparameter tuning of the model has consisted of variably setting the number of epochs the model trains for as well as the size of the hidden dimension. 
+		\subsubsection{Baselines and Evaluation Metrics}
+			We employ two main evaluation metrics: human analysis and the Recall-Oriented Understudy for Gisting Evaluation (Rouge) \cite{ganesan2015}. Our baseline summaries for each document contain the first sentence of each paragraph present in the document text. After the model has generated summaries, we visually inspect the summaries to determine if pertinent keywords are present and how similar the structure is to the provided human-generated abstract. We also compare the summaries with the abstracts mathematically by way of the ROUGE metric. ROUGE is designed for automatic summarization tasks and calculates the overlap between the model-generated summary and the corresponding abstract. We invoke three ROUGE metrics: ROUGE-1 (unigram representation), ROUGE-2 (bigram representation), and ROUGE-L (longest common subsequence representation). We report precision, recall and F-score. Our datasets do not have true summary files to compare with but the abstracts are a decent substitute.
+			
 \section{Results and Analysis} % present a table of results
 % Your need to discuss the results and provide critical analysis of your work (Such as: Have you thought about ways to improve the model? Howdo you think the model accuracy? etc.) 
-	We will need to include a table of results.
+	When comparing the indices of the model's highest scoring sentences, the GRU cells more often choose the first few sentences present in the documents than the basic RNN cells.
 \section{Conclusion}
-	We propose the summarization of scientific journals by way of machine learning methods \cite{ganesan2015}
+	Conclusion here.
 
 \bibliographystyle{acl}
 \bibliography{nlp_bib}
