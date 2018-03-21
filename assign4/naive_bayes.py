@@ -1,5 +1,9 @@
 #!/bin/env python
 
+###############################################################################
+# CSCI 404 - Assignment 4 - Josh Loehr & Robin Cosbey - naive_bayes.py        #
+###############################################################################
+
 import argparse
 import glob
 import nltk
@@ -10,6 +14,17 @@ from functools import reduce
 from operator import mul
 
 def load_data(datapath, dataset):
+    """Load specified dataset spam and nonspam data from a directory.
+
+    Args:
+        datapath (str) -- path to the directory containing data subdirectories. 
+        dataset (str)  -- either "train" or "test" depending on dataset entered.
+
+    Returns:
+        A tuple of the spam and nonspam documents. Each list within a given class
+        contains a list of the words present in the present document.
+
+    """
     spam=[] 
     nonspam=[]
     for filename in glob.glob('{}/{}-{}/*.txt'.format(datapath, "spam", dataset)):
@@ -21,7 +36,21 @@ def load_data(datapath, dataset):
     return (spam, nonspam)
 
 class NaiveBayesClassifier(object):
+    """A Naive Bayes classifier trained on a given corpus
+    
+    Construct a dictionary of the num_features most common words in train and test.
+    
+    Contains methods for classifying a given document, saving current model, and auxilary 
+    methods for calculating the probabilities of words in a given document given a class
+    as well as prior probabilities for a given class.
 
+    Args:
+        train (tuple of list of list) -- the train data containing both spam and nonspam. 
+        test (tuple of list of list)  -- the test data containing both spam and nonspam.
+        num_features                  -- The total number of words to store as features.
+
+    """
+ 
     def __init__(self, train, test, num_features=2500):
         self.train_documents = dict(spam=train[0], nonspam=train[1])
         self.train_vocab = self.build_vocab(*train)
