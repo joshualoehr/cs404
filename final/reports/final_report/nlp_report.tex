@@ -54,9 +54,13 @@
 		\subsubsection{Baselines and Evaluation Metrics}
 			We employ two main evaluation metrics: human analysis and the Recall-Oriented Understudy for Gisting Evaluation (Rouge) \cite{ganesan2015}. Our baseline summaries for each document contain the first sentence of each paragraph present in the document text. After the model has generated summaries, we visually inspect the summaries to determine if pertinent keywords are present and how similar the structure is to the provided human-generated abstract. We also compare the summaries with the abstracts mathematically by way of the ROUGE metric. ROUGE is designed for automatic summarization tasks and calculates the overlap between the model-generated summary and the corresponding abstract. We invoke three ROUGE metrics: ROUGE-1 (unigram representation), ROUGE-2 (bigram representation), and ROUGE-L (longest common subsequence representation). We report precision, recall and F-score. Our datasets do not have true summary files to compare with but the abstracts are a decent substitute.
 			
-\section{Results and Analysis} % present a table of results
+\section{Results} % present a table of results
 % Your need to discuss the results and provide critical analysis of your work (Such as: Have you thought about ways to improve the model? Howdo you think the model accuracy? etc.) 
+    \subsection{Results}
+
+    \subsection{Analysis and Discussion}
 	When comparing the indices of the model's highest scoring sentences, the GRU cells more often choose the first few sentences present in the documents than the basic RNN cells.
+
 \section{Conclusion}
 	Conclusion here.
 
