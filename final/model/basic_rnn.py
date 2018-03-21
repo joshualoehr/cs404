@@ -1,10 +1,16 @@
 """
-How to run (update with custom epoch number and hidden dimension L):
-python basic_rnn.py --data model_data --out system -ep 10 -L 10
-
+Build the model architecture, train the model, and produce summaries.
+Input requirements: 
 features == number of documents x maximum length x number of features
+    - The integer representations of the words in each document and any other provided features
 labels   == number of documents x maximum length (scores for each sentence) 
+    - The true scores for each sentence in each document
 lens     == number of sentences contained in each document
+    - The number of sentences in each document (so that we do not score on padded lines)
+
+How to run:
+python basic_rnn.py --data model_data --out system 
+
 
 Adapted from code written by Brian Hutchinson.
 """
@@ -16,36 +22,43 @@ import os
 
 def parseArgs():
     parser = argparse.ArgumentParser()
-    
-    # data
+    # data/architecture
     parser.add_argument("--data", required=True, type=str,
         help="Directory containing train, dev, and test subdirectories.")
     parser.add_argument("--out",   required=True, type=str,
         help="Directory to store produced summaries to.")
-    
+    parser.add_argument("-gru", action="store_true",
+        help="Flag to use GRU cells rather than basic RNN cells.") 
     # hyperparameter values
     parser.add_argument("-lr", type=float, default=0.001, help="The learning rate.")
     parser.add_argument("-L",  type=int,   default=100,   help="The hidden layer dimension.")
     parser.add_argument("-ep", type=int,   default=20,    help="The number of epochs to train for.")
-
     return parser.parse_args()
 
 def loadData(directory, set_name):
+    """
+    Given a dataset, load the Numpy binary files into Numpy arrays.
+    If the test dataset is provided, load the abstract lengths, document files, and document names.
+    """
     dir_file = directory + set_name + "/" + set_name
     labels = np.load(dir_file + "_labels.npy")
     features = np.load(dir_file + "_feats.npy")
-    all_lens = list(np.load(dir_file + "_lens.npy"))   # the number of sentences in each document
+    all_lens = list(np.load(dir_file + "_lens.npy"))
     
     abstracts = list(np.load(dir_file + "_abs.npy")) if set_name == "test" else ""
     documents = np.load(dir_file + "_docs.npy") if set_name == "test" else ""
     doc_names = np.load(dir_file + "_names.npy") if set_name == "test" else ""
-
     return labels, features, all_lens, abstracts, documents, doc_names
  
 def buildGraph(args, vocab_size, num_feats):
     """
+    Build the graph representation of the model. Create placeholders and variables, set up 
+    optimization methods and computations related to the perplexity and accuracy values.
     """
-    rnn_cell = tf.nn.rnn_cell.BasicRNNCell(args.L)
+    if args.gru:
+        rnn_cell = tf.nn.rnn_cell.GRUCell(args.L)
+    else:
+        rnn_cell = tf.nn.rnn_cell.BasicRNNCell(args.L)
 
     # placeholders
     h0     = tf.placeholder(dtype=tf.float32, shape=(None, args.L), name="h0")
@@ -53,14 +66,13 @@ def buildGraph(args, vocab_size, num_feats):
     x = tf.placeholder(dtype=tf.float32, shape=(None, None, num_feats), name="x")
     y_true = tf.placeholder(dtype=tf.int64, shape=(None, None), name="y_true")
     
-    # outputs (mb, num_steps, args.L) - per time outputs for each sentence
-    # state   (mb, args.L)            - last hidden state per sentence
+    # outputs = (1, num_steps, args.L), state = (1, args.L)
     outputs, state = tf.nn.dynamic_rnn(cell=rnn_cell, 
                                        inputs=x,
                                        sequence_length=lens,
                                        initial_state=h0,
                                        dtype=tf.float32)
-    # hidden to output layer weights (hidden layer dimension by vocabulary size)
+    # hidden to output layer weights and bias vectors
     W = tf.get_variable(dtype=tf.float32,
                                 shape=(args.L, vocab_size),
                                 initializer=tf.glorot_uniform_initializer(),
@@ -85,21 +97,22 @@ def buildGraph(args, vocab_size, num_feats):
     normalized_objective = unnormalized_objective / denominator
     train_step = tf.train.AdamOptimizer(args.lr).minimize(normalized_objective, name="train_step")
 
-    # perplexity and accuracy
-    #ppl = tf.exp(normalized_objective, name="perplexity")
+    # accuracy value (the number of model-generated labels that were correct)
     max_logits = tf.argmax(logits, axis=2, name="ls")
-    acc = tf.reduce_sum(tf.cast(tf.equal(y_true, max_logits), tf.float32), name="accuracy")
+    acc = tf.reduce_sum((tf.cast(tf.equal(y_true, max_logits), tf.float32)*mask), name="accuracy")
 
     init = tf.global_variables_initializer()
 
     return init
 
 def evaluateDev(args, features, labels, lens, sess):
-    ppl = 0.0
-    acc = 0.0
-    denominator = 0.0
+    """
+    Run the model for each document with the development dataset. 
+    Produce perplexity and accuracy scores for each document.
+    """
+    ppl, acc, denom = 0, 0, 0
     hidden_states = np.zeros(shape=(features.shape[0], args.L), dtype=np.float32)
-    for row in range(features.shape[0]):    # row corresponds to document
+    for row in range(features.shape[0]):   
         x = np.reshape(features[row,:,:], (1, features.shape[1], features.shape[2]))
         y_true = np.reshape(labels[row,:], (1, labels.shape[1]))
         h = np.reshape(hidden_states[row,:], (1, hidden_states.shape[1]))
@@ -111,9 +124,14 @@ def evaluateDev(args, features, labels, lens, sess):
         ppl += p
         acc += a
         denominator += denom
-    print("Dev ppl = %.5f acc = %.5f" % (ppl/denominator, acc/denominator))
+    print("Dev ppl = %.5f acc = %.5f" % (np.exp((ppl/denominator)), acc/denominator))
  
 def generateSummary(logits, abstract_len, document, doc_name, out_dir):
+    """
+    With the model-produced scores, save the indices of abstract_len highest scores. 
+    Order the indices from least to greatest. With the provided document file, extract
+    the sentences at the given indices and save to a summary file.
+    """
     out_dir = out_dir + "/" if out_dir[-1] != "/" else out_dir
     
     if not os.path.exists(out_dir): 
@@ -130,6 +148,10 @@ def generateSummary(logits, abstract_len, document, doc_name, out_dir):
         f.write("\n".join([document[i] for i in sentence_indices]))
 
 def evaluateTest(args, features, labels, lens, abstracts, documents, document_names, sess):
+    """ 
+    Run the model for each document in the test dataset.
+    Produce perplexity and accuracy scores as well as model-generated summaries for each document.
+    """
     hidden_states = np.zeros(shape=(features.shape[0], args.L), dtype=np.float32)
     for row in range(features.shape[0]):    # row corresponds to document
         x = np.reshape(features[row,:,:], (1, features.shape[1], features.shape[2]))
@@ -140,7 +162,7 @@ def evaluateTest(args, features, labels, lens, abstracts, documents, document_na
                                        "y_true:0":y_true,
                                        "h0:0":h,
                                        "lens:0":([lens[row]])})
-        print("%s: ppl = %.5f acc = %.5f" % (document_names[row].split("_")[0], p/denom, a/denom), end=" ")
+        print("%s: ppl = %.5f acc = %.5f" % (document_names[row].split("_")[0], (np.exp((p/denom))), ((a/denom))), end=" ")
         generateSummary(logits, abstracts[row], documents[row], document_names[row], args.out)
 
 def main():
@@ -148,7 +170,6 @@ def main():
     Load datasets, train on minibatches for each epoch, and report scores on dev set.
     """
     args = parseArgs()
-    
     data = args.data + "/" if args.data[-1] != "/" else args.data
 
     # load data
@@ -156,41 +177,33 @@ def main():
     dev_labels, dev_feats, dev_lens, _, _, _ = loadData(data, "dev")
     test_labels, test_feats, test_lens, test_abs, test_docs, test_names = loadData(data, "test")
 
-    N = train_feats.shape[0]            # number of documents (number of training sequences)
-    num_steps = train_feats.shape[1]    # number of sentences, vocabulary size (length of the unrolled graph)
+    num_docs = train_feats.shape[0]     # number of docs (number of training sequences)
+    num_steps = train_feats.shape[1]    # number of sents, vocab size (length of the unrolled graph)
     num_feats = train_feats.shape[2]    # number of features
     
     init = buildGraph(args, num_steps, num_feats)
  
-    # TRAIN
     with tf.Session() as sess:
         sess.run(fetches=[init])
 
-        print("Total minibatches per epoch: %d" % N)
-
         for epoch in range(args.ep):
             print("epoch %d update... " % (epoch), end='', flush=True)
-            for mb_row in range(N):
-                mb_x = np.reshape(train_feats[mb_row,:,:], (1, num_steps, num_feats))
-                mb_y = np.reshape(train_labels[mb_row,:], (1, num_steps))
-                mb_lens = [train_lens[mb_row]]
-                mb_h0 = np.zeros(shape=(1, args.L), dtype=np.float32)
+            for row in range(N):
+                x = np.reshape(train_feats[row,:,:], (1, num_steps, num_feats))
+                y = np.reshape(train_labels[row,:], (1, num_steps))
+                lens = [train_lens[row]]
+                h0 = np.zeros(shape=(1, args.L), dtype=np.float32)
 
                 sess.run(fetches=["train_step"],
-                         feed_dict={"x:0":mb_x,
-                                    "y_true:0":mb_y,
-                                    "h0:0":mb_h0,
-                                    "lens:0":(mb_lens)})
+                         feed_dict={"x:0":x,
+                                    "y_true:0":y,
+                                    "h0:0":h0,
+                                    "lens:0":(lens)})
 
             print("training loop finished.", end=" ")
-    
-            if(epoch % 1 == 0):
-                evaluateDev(args, dev_feats, dev_labels, dev_lens, sess)
-            else:
-                print()
+            evaluateDev(args, dev_feats, dev_labels, dev_lens, sess)
 
         print()
         evaluateTest(args, test_feats, test_labels, test_lens, test_abs, test_docs, test_names, sess)          
-
 if __name__ == "__main__":
     main()
