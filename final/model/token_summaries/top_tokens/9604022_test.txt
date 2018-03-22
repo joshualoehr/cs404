@@ -1,0 +1,4 @@
+{{hed}}
+a set rule basi end charact unknown word assign set possibl {{acr}} tag suppli xerox tagger {{ref}}
+virtual almost everi word guess morpholog rule guess exact correct {{num}} recal {{num}} precis
+both tagger come data word guess compon pre train brown corpus
