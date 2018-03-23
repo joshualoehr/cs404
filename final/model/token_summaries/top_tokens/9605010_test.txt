@@ -1,4 +1,0 @@
-{{hed}}
-current work surfac realize concentr use general abstract algorithm interpret declar defin non direct grammar
-it claim way grammar reus pars generat generat interpret differ grammar eg machin translat
-adapt semant layer generat algorithm thus achiev revers turn difficult enterpris {{ref}}

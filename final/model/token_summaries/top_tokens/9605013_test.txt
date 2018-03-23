@@ -1,8 +1,0 @@
-we see airlin compani subject verb fli valu slot arg1 direct object valu slot arg2 airplan airlin compani
-it also clear relat random variabl case slot actual depend signific
-in paper use case slot mean surfac case slot uniform treat obligatori case option case
-when {{sym}} take {{num}} {{num}} valu call model slot base model
-we also calcul averag perplex independ slot model acquir base assumpt case slot independ
-we conclud paper follow remark
-this would requir even data thus problem collect suffici data would crucial issu addit methodolog learn case frame pattern probabilist depend graph
-final problem determin obligatori option case base depend acquir data also address
