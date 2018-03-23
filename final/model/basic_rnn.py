@@ -138,15 +138,17 @@ def generateSummary(logits, abstract_len, document, doc_name, out_dir):
     if not os.path.exists(out_dir): 
         os.makedirs(out_dir)
 
-    out_file = out_dir + doc_name + ".txt"
+    summary_file = out_dir + doc_name + ".txt"
+    score_file = out_dir + doc_name.split("_")[0] + "_scores.txt"
     logits = logits[0][:len(document)]
     
     indexed_logits = list(enumerate(logits))
     indexed_logits.sort(key=lambda logit: logit[1])
     sentence_indices = sorted([index for index, score in indexed_logits[:abstract_len]])
     print(sentence_indices)
-    with open(out_file, 'w') as f:
-        f.write("\n".join([document[i] for i in sentence_indices]))
+    with open(summary_file, 'w') as summary, open(score_file, 'w') as scores:
+        summary.write("\n".join([document[i] for i in sentence_indices]))
+        scores.write("\n".join((str(s) for s in logits)))
 
 def evaluateTest(args, features, labels, lens, abstracts, documents, document_names, sess):
     """ 

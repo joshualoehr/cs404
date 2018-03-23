@@ -60,8 +60,8 @@ def loadAbstracts(sorted_data):
     all_abs = []
     all_docs = []
     
-    abs_files = getFiles(sorted_data, "abstract.sentences")
-    doc_files = getFiles(sorted_data, "article.sentences")
+    abs_files = getFiles(sorted_data, "abstract.tokens")
+    doc_files = getFiles(sorted_data, "article.tokens")
     document_names = [doc_name.split("/")[1] for doc_name in doc_files]
     
     for abstract in abs_files:

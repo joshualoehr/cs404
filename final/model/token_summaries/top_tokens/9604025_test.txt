@@ -1,4 +1,0 @@
-{{hed}}
-part speech {{acr}} tagger program assign singl {{acr}} tag word token provid known part speech word take principl
-in order tagger suppli lexicon list possibl {{acr}} tag word seen train phase
-natur tag real word text one expect encount word seen train phase henc includ lexicon

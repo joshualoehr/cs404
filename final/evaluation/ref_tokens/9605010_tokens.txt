@@ -1,4 +1,0 @@
-current work surfac realize concentr use general abstract algorithm interpret larg revers grammar
-onli littl attent paid far mani small simpl applic requir coverag small sublanguag differ degre sophist
-the system {{acr}} {{num}} describ paper smooth integr deep generat process integr can text templat context free rule singl formal allow textual tabular output parameter accord linguist prefer
-these featur base suitabl restrict product system techniqu generic backtrack regim

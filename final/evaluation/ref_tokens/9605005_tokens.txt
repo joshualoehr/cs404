@@ -1,4 +1,0 @@
-pulman shown higher order unif {{acr}} use model interpret focus
-in paper extend unif base approach case often seen test bed focus theori utter multipl focus oper second occurr express
-we show result analysi favour compar two promin theori focus name rooth altern semant krifka structur mean theori correct generat interpret altern theori cannot yield
-final discuss formal properti approach argu even though {{acr}} need termin class unif problem dealt paper {{acr}} avoid shortcom fact comput tractabl
