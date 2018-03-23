@@ -1,4 +1,0 @@
-word unknown lexicon present substanti problem part speech tag
-in paper present techniqu fulli unsupervis statist acquisit rule guess possibl part speech unknown word
-three complementari set word guess rule induc lexicon raw corpus prefix morpholog rule suffix morpholog rule end guess rule
-the learn perform brown corpus data rule set high competit perform produc compar state art

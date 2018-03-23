@@ -1,5 +1,0 @@
-we address problem automat construct thesaurus cluster word base corpus data
-we view problem estim joint distribut cartesian product partit set noun partit set verb propos learn algorithm base minimum descript length {{acr}} principl estim
-we empir compar perform method base {{acr}} principl maximum likelihood estim word cluster found former outperform latter
-we also evalu method conduct pp attach disambigu experi use automat construct thesaurus
-our experiment result indic thesaurus use improv accuraci disambigu
