@@ -1,0 +1,4 @@
+this paper present prune techniqu use reduc number path search rule base bag generat type propos
+prune search space generat import given comput cost bag generat
+the techniqu reli connect constraint semant indic associ lexic sign bag
+test algorithm rang sentenc show reduct generat time number edg construct

@@ -1,0 +1,8 @@
+we address problem automat acquir case frame pattern select pattern larg corpus data
+in particular propos method learn depend case frame slot
+we view problem learn case frame pattern learn multi dimension discret joint distribut random variabl repres case slot
+we formal depend case slot probabilist depend random variabl
+sinc number paramet multi dimension joint distribut exponenti general infeas accur estim practic
+to overcom difficulti settl approxim target joint distribut product low order compon distribut base corpus data
+in particular propos employ effici learn algorithm base {{acr}} principl realiz task
+our experiment result indic certain class verb accuraci achiev disambigu experi improv use acquir knowledg depend

@@ -48,6 +48,7 @@ def loadData(directory, set_name):
     abstracts = list(np.load(dir_file + "_abs.npy")) if set_name == "test" else ""
     documents = np.load(dir_file + "_docs.npy") if set_name == "test" else ""
     doc_names = np.load(dir_file + "_names.npy") if set_name == "test" else ""
+    doc_names = np.asarray(doc_names, dtype=str)
     return labels, features, all_lens, abstracts, documents, doc_names
  
 def buildGraph(args, vocab_size, num_feats):
@@ -110,7 +111,7 @@ def evaluateDev(args, features, labels, lens, sess):
     Run the model for each document with the development dataset. 
     Produce perplexity and accuracy scores for each document.
     """
-    ppl, acc, denom = 0, 0, 0
+    ppl, acc, denominator = 0, 0, 0
     hidden_states = np.zeros(shape=(features.shape[0], args.L), dtype=np.float32)
     for row in range(features.shape[0]):   
         x = np.reshape(features[row,:,:], (1, features.shape[1], features.shape[2]))
@@ -188,7 +189,7 @@ def main():
 
         for epoch in range(args.ep):
             print("epoch %d update... " % (epoch), end='', flush=True)
-            for row in range(N):
+            for row in range(num_docs):
                 x = np.reshape(train_feats[row,:,:], (1, num_steps, num_feats))
                 y = np.reshape(train_labels[row,:], (1, num_steps))
                 lens = [train_lens[row]]

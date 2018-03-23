@@ -1,0 +1,8 @@
+natur languag generat {{acr}} system generat text english human languag french comput access data
+{{acr}} system current often use help human author write routin document includ busi letter weather report
+they also use interact explan tool communic inform understand way non expert user especi softwar engin eg medic eg context
+from technic perspect almost appli {{acr}} system perform follow three task content determin text plan decid inform communic user content determin inform rhetor structur text plan
+these task usual done simultan
+sentenc plan decid inform split among individu sentenc paragraph cohes devic eg pronoun discours marker ad make text flow smooth
+realize generat individu sentenc grammat correct manner
+in rest paper {{sym}} shall briefli discuss differ way perform task

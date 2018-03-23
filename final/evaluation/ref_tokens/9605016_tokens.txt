@@ -1,0 +1,4 @@
+we studi comput complex pars problem variant lambek categori grammar call semidirect
+in semidirect lambek calculus {{acr}} addit non direct abstract rule allow formula abstract appear anywher premis sequent left hand side thus permit non peripher extract
+{{acr}} grammar abl generat context free languag
+we show pars problem semidirect lambek grammar {{acr}} complet reduct {{num}} partit problem
