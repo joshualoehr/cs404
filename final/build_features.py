@@ -41,7 +41,7 @@ if __name__ == '__main__':
         with open(doc_tokens_file, 'r') as f:
             sents = f.read().split('\n')
     
-            for idx,(sent,sent_len) in enumerate(zip(sents, sent_lens)):
+            for idx,sent in enumerate(sents):
                 if sent == '{{hed}}':
                     header_id += 1
                     first_sent = True
@@ -54,6 +54,7 @@ if __name__ == '__main__':
                 for token in tokens:
                     token_map(token)
 
+                sent_len = sent_lens[idx - (header_id + 1)]
                 features[doc].append((header_id, sent_len, tokens))
 
 
