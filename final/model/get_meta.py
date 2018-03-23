@@ -10,16 +10,13 @@ files = glob.glob("data/*/article.features")
 
 doc = []
 sen = []
-
+counter = 0
 for file_name in files:
     with open(file_name, 'r') as f:
         lines = f.readlines()
         doc.append(len(lines))
-        if len(lines) > 300:
-            print("More than 100 sentences: " + file_name)
         for line in lines:
             line = line.strip().split()
             sen.append(len(line))
-
 print("Documents: total=%d, min=%d, max=%d, avg=%f" % (len(doc), min(doc), max(doc), (sum(doc)/float(len(doc)))))
 print("Sentences: total=%d, min=%d, max=%d, avg=%f" % (len(sen), min(sen), max(sen), (sum(sen)/float(len(sen)))))
